@@ -22,7 +22,7 @@ set maxvar 10000
 // 1. Global macros for file path
 // global basedir /Users/brianlivingston/Documents/GitHub/HandToMouth/SCF
 // global basedir C:/Users/Brian/Documents/GitHub/HandToMouth/SCF
-global basedir /media/hdd/GitHub/HandToMouth/SCF
+global basedir /media/storage/GitHub/SCF
 global fulldir "${basedir}/build/input/full"
 global extractdir "${basedir}/build/input/extract"
 ////////////////////////////////////////////////////////////////////////////////
@@ -47,7 +47,4 @@ do ${basedir}/build/code/build4_replicates.do
 // 3. Compute fraction HtM ("stats" directory)
 // process the the output from build directory, SCF_89_16_cleaned.dta, and
 // produce final output
-do ${basedir}/stats/code/stats.do
-
-// HtM and direct survey questions
-do ${basedir}/stats/code/stats_directquestions.do
+do ${basedir}/stats/code/computation.do

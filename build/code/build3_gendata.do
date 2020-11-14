@@ -6,8 +6,7 @@ cap mkdir ${basedir}/build/output
 
 // this file generates all of the different definitions for the robustness checks
 
-cd ${basedir}/build/temp
-use SCF_89_19_merged.dta, clear
+use ${basedir}/build/temp/SCF_89_19_merged.dta, clear
 
 gen labincwork = .
 replace labincwork = labinc if age<=59
@@ -28,6 +27,12 @@ gen certdep     = cds
 gen retacc      = retqliq
 gen lifeins     = cashli
 gen netbus      = bus
+gen x_liquid = liq + cds + nmmf + stocks + bond
+gen x_stocks = stmutf + comutf + stocks
+gen x_stockexp = x_stocks / x_liquid if (x_liquid > 0) & !missing(x_liquid)
+label variable x_stockexp "Equity share of liquid assets"
+
+gen x_surplusliquid = x_liquid - necessaryemergfunds
 
 // baseline
 gen brliqpos      = liqpos + direct
@@ -105,8 +110,5 @@ label values agedum l_age
 
 
 drop X*
-cd ${basedir}/build/output
-save SCF_89_19_cleaned.dta, replace
-
-cd ${basedir}/build/temp
-!rm SCF_89_19_merged.dta
+save ${basedir}/build/output/SCF_89_19_cleaned.dta, replace
+// !rm ${basedir}/build/temp/SCF_89_19_merged.dta

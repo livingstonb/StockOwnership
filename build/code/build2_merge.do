@@ -11,20 +11,19 @@ clear
 cd ${basedir}/build/temp
 
 use year Y1 YY1 X432 X413 X421 X424 X427 X430 X7132 ///
-       X410 X7973 X7976 ///
-	   X816 ///
-       X414 X407 X409 ///
+	   X410 X7973 X7976 ///
+	   X816 X3010 X7186 X3008 X3015 X3016 X3017 X3018 X3019 X3020 ///
+	   X414 X407 X409 ///
 	   X5702 X5704 X5716 X5718 X5720 X5722 X5724 X5725 ///
 	   X4135 X4206 X4219 X4735 X4806 X4819 ///
-	   X3015 X3016 X3017 ///
 	   X7509 X7510 ///
 	   X4112 X4113 X4712 X4713 X4131 X4132 X4731 X4732 ///
-	   X411 X425 ///
-	   X5727 X5726 ///
+	   X411 X425 X7187 X7558 X7559 X7560 ///
+	   X5727 X5726 X3014 ///
 	   X7402 X7412 ///
 	   X7401 X7411 ///
-	   X7126 ///
-	   X6809 ///
+	   X7126 X6357 ///
+	   X6809 X6797 X6798 ///
 	   X521 X602 X612 X619 X708 X703 X721 X808 X908 X1008 X1039 X1109 X1120 X1131 ///
 	   X1210 X1220 X1718 X1818 X2007 X2017 X2105 X2112 X2117 X2213 X2313 X2413 X7162 ///
 	   X2425 X2514 X2614 X2626 X7815 X7838 X7861 X7915 X7938 X7938 X7961 X7180 X2718 ///
@@ -40,6 +39,8 @@ use year Y1 YY1 X432 X413 X421 X424 X427 X430 X7132 ///
 
 ///////////////////////////////////////////////////////////////////////////////
 // renames or defines variables in the full data set
+
+label define yesnolabel 0 "No" 1 "Yes"
 
 // race
 gen race = X6809
@@ -127,9 +128,9 @@ replace usuallabinc = labinc if X7650 == 3
 
 
 // direct questions
-rename X3015 nosavebor
-rename X3016 nosavezero
-rename X3017 savewhatta
+gen nosavebor = X3015
+gen nosavezero = X3016
+gen savewhatta = X3017
 gen htm1=0
 replace htm1 = 1 if nosavebor==1 | nosavezero==1 
 
@@ -211,6 +212,48 @@ replace labearn1 = 0 if labearn1<=0
 replace labearn2 = 0 if labearn2<=0
 replace selfearn1 = 0 if selfearn1<=0
 replace selfearn2 = 0 if selfearn2<=0
+
+// new variables
+gen anticipates_expenses = 1 if (X3010 == 1)
+replace anticipates_expenses = 0 if (X3010 == 5)
+label values anticipates_expenses yesnolabel
+
+gen saving_for_expense = 1 if inlist(X7186, 1, 6)
+replace saving_for_expense = 0 if inlist(X7186, 5, 0)
+label values saving_for_expense yesnolabel
+
+rename X3008 budgeting_horizon
+label define bhorizonlbl 1 "Next Few Months" 2 "Next Year" 3 "Next Few Years" 4 "Next 5-10 Years" 5 "Longer Than 20 Years"
+label values budgeting_horizon bhorizonlbl
+
+rename X3014 finrisktol
+label define finrisktollbl 1 "Substantial risk" 2 "Above average" 3 "Average" 4 "None"
+
+gen is_saving = 1 if (X3017 == 1) | (X3018 == 1) | (X3019 == 1) | (X3020 == 1)
+replace is_saving = 0 if (X3015 == 1) | (X3016 == 1)
+label values is_saving yesnolabel
+
+gen finlit1 = 1 if (X7558 == 5)
+replace finlit1 = 0 if (X7558 == 1)
+
+gen finlit2 = 1 if (X7559 == 1)
+replace finlit2 = 0 if inlist(X7559, 3, 5)
+
+gen finlit3 = 1 if (X7560 == 5)
+replace finlit3 = 0 if inlist(X7560, 1, 3)
+
+gen isfinlit = 1 if (finlit1 == 1) & (finlit2 == 1) & (finlit3 == 1)
+replace isfinlit = 0 if !missing(finlit1, finlit2, finlit3) & missing(isfinlit)
+label values isfinlit yesnolabel
+
+gen exercisedstockoption = (X6797 == 1) | (X6798 == 1)
+label values exercisedstockoption yesnolabel
+
+gen healthinsured = (X6357 == 1)
+label values healthinsured yesnolabel
+
+rename X7187 necessaryemergfunds
+
 ///////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -338,6 +381,6 @@ destring im0100, replace
 cd ${basedir}/build/temp
 save SCF_89_19_merged.dta, replace
 
-!rm SCF_89_19_full.dta
-!rm SCF_89_19_extract.dta
+// !rm SCF_89_19_full.dta
+// !rm SCF_89_19_extract.dta
 ///////////////////////////////////////////////////////////////////////////////
