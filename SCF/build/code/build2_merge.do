@@ -22,7 +22,7 @@ use year Y1 YY1 X432 X413 X421 X424 X427 X430 X7132 ///
 	   X5727 X5726 X3014 ///
 	   X7402 X7412 ///
 	   X7401 X7411 ///
-	   X7126 X6357 ///
+	   X7126 X6357 X3923 ///
 	   X6809 X6797 X6798 ///
 	   X521 X602 X612 X619 X708 X703 X721 X808 X908 X1008 X1039 X1109 X1120 X1131 ///
 	   X1210 X1220 X1718 X1818 X2007 X2017 X2105 X2112 X2117 X2213 X2313 X2413 X7162 ///
@@ -253,6 +253,9 @@ gen healthinsured = (X6357 == 1)
 label values healthinsured yesnolabel
 
 rename X7187 necessaryemergfunds
+
+gen has_brokerage = (X3923 == 1)
+gen margin_loans = X3932
 
 ///////////////////////////////////////////////////////////////////////////////
 
