@@ -1104,6 +1104,9 @@ rename ER65197 hlabbus
 rename ER65225 wlabbus
 rename ER65319 oassinc
 
+rename ER60194 occhead
+rename ER60457 occsp
+
 drop ER*
 gen year = 2015
 compress

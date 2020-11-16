@@ -3,7 +3,7 @@ clear*;
 set maxvar 30000;
 set more 1;
 
-global basedir /media/storage/GitHub/StockOwnership/PSID ;
+global basedir /media/storage/GitHub/StockOwnership/PSID;
 
 ////////////////////////////////////////////////////////////////////////////////
 * BUILD DIRECTORY;

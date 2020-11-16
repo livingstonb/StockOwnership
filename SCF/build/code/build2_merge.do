@@ -16,11 +16,11 @@ use year Y1 YY1 X432 X413 X421 X424 X427 X430 X7132 ///
 	   X414 X407 X409 ///
 	   X5702 X5704 X5716 X5718 X5720 X5722 X5724 X5725 ///
 	   X4135 X4206 X4219 X4735 X4806 X4819 ///
-	   X7509 X7510 ///
+	   X7509 X7510 X7054 ///
 	   X4112 X4113 X4712 X4713 X4131 X4132 X4731 X4732 ///
 	   X411 X425 X7187 X7558 X7559 X7560 ///
 	   X5727 X5726 X3014 ///
-	   X7402 X7412 ///
+	   X7402 X7412 X1215 X1216 ///
 	   X7401 X7411 ///
 	   X7126 X6357 X3923 ///
 	   X6809 X6797 X6798 ///
@@ -34,7 +34,13 @@ use year Y1 YY1 X432 X413 X421 X424 X427 X430 X7132 ///
 	   X7524 X7523 X7522 X7185 X4012 X11029 X11129 X11329 X11429 ///
 	   X1918 X1919 X11528 X11529 X5732 X5734 X7508 X4100 X4700 X4022 X4026 X4030 X7131 X7362 ///
 	   X7650 X7372 X108 X114 X120 X126 X132 X202 X208 X214 X220 X226 X8023 X1104 X1115 X1126 ///
+	   X816 X916 X1016 X1045 X1111 X1122 X1133 X1216 X2219 X2319 X2419 X7170 ///
+		X2520 X2520 X2620 X7822 X7845 X7868 X7922 X7945 X7968 X2724 X2741 X2824 ///
+		X2841 X2924 X2941 X4013 X1826 X1726 X1216 ///
+		X6551 X6552 X6553 X6554 X6559 X6560 X6561 X6562 X6567 X6568 X6569 X6570 ///
+		X6556 X6564 X6572 X6582 X6592 ///
 	   using SCF_89_19_full.dta
+
 ///////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -96,6 +102,9 @@ replace ccdebt = (revbalance1+revbalance2+revbalance3+revbalance4+revbalance5)
 // credit limit
 rename X414  maxcredit
 replace maxcredit=0 if maxcredit==-1
+
+// mortgage
+rename X7054 mortrate
 
 // generating income 
 rename X5702 hh_earnings
@@ -255,7 +264,60 @@ label values healthinsured yesnolabel
 rename X7187 necessaryemergfunds
 
 gen has_brokerage = (X3923 == 1)
-gen margin_loans = X3932
+// gen margin_loans = X3932
+
+rename X816 loanrate1
+rename X916 loanrate2
+rename X1016 loanrate3
+rename X1045 loanrate4
+rename X1111 loanrate5
+rename X1122 loanrate6
+rename X1133 loanrate7
+rename X1216 loanrate8
+rename X2219 loanrate9
+rename X2319 loanrate10
+rename X2419 loanrate11
+rename X7170 loanrate12
+rename X2520 loanrate13
+rename X2620 loanrate14
+rename X7822 loanrate15
+rename X7845 loanrate16
+rename X7868 loanrate17
+rename X7922 loanrate18
+rename X7945 loanrate19
+rename X7968 loanrate20
+rename X2724 loanrate21
+rename X2741 loanrate22
+rename X2824 loanrate23
+rename X2841 loanrate24
+rename X2924 loanrate25
+rename X2941 loanrate26
+rename X4013 loanrate27
+rename X1726 loanrate28
+rename X1826 loanrate29
+
+forvalues iloan = 1/29 {
+	replace loanrate`iloan' = 0 if loanrate`iloan' < 0
+	replace loanrate`iloan' = loanrate`iloan' / 10000
+}
+
+egen maxirate = rowmax(loanrate*)
+
+gen retirself_value = X6551 + X6552 + X6553 + X6554
+gen retirsp_value = X6559 + X6560 + X6561 + X6562
+gen retirfam_value = X6567 + X6568 + X6569 + X6570
+gen retir_value = retirself_value + retirsp_value + retirfam_value
+
+gen retirself_pct_stocks = X6556 / 10000
+gen retirsp_pct_stocks = X6564 / 10000
+gen retirfam_pct_stocks = X6572 / 10000
+gen annuity_pct_stocks = X6582 / 10000
+gen trust_pct_stocks = X6592 / 10000
+
+gen retirself_stocks = retirself_value * retirself_pct_stocks
+gen retirsp_stocks = retirsp_value * retirsp_pct_stocks
+gen retirfam_stocks = retirfam_value * retirfam_pct_stocks
+gen retir_stocks = retirself_stocks + retirsp_stocks + retirfam_stocks
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -367,6 +429,26 @@ replace married = 0 if married == 2
 rename edcl educcat
 label define edlab 1 "<HS" 2 "HS" 3 "some college" 4 "college"
 label values educcat edlab
+
+gen educyears = 4 if (educ == 1)
+replace educyears = 5 if (educ == 2)
+replace educyears = 7 if (educ == 3)
+replace educyears = 9 if (educ == 4)
+replace educyears = 10 if (educ == 5)
+replace educyears = 11 if (educ == 6)
+replace educyears = 12 if (educ == 7)
+replace educyears = 12 if (educ == 8)
+replace educyears = 14 if inrange(educ, 9, 11)
+replace educyears = 16 if (educ == 12)
+replace educyears = 18 if (educ == 13) | (educ == 14)
+replace educyears = 20 if (educ == 15)
+replace educyears = 0 if (educ < 0)
+
+gen educhigh = 0
+replace educhigh = 1 if (educ == 12)
+replace educhigh = 2 if inrange(educ, 13, 15)
+label define educhighlbl 0 "Less" 1 "Bachelor's Degree" 2 "Graduate or Professional Degree"
+label values educhigh educhighlbl
 
 rename lf working
 
