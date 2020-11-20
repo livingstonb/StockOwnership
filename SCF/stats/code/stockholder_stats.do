@@ -1,6 +1,6 @@
 use build/output/SCF_89_19_cleaned.dta, clear
 
-keep if inrange(age, 25, 45)
+keep if inrange(age, 25, 55)
 keep if inlist(year, 2016, 2019)
 // keep if (x_labinc_quantile == 5)
 

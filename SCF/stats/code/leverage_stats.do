@@ -1,7 +1,7 @@
 use build/output/SCF_89_19_cleaned.dta, clear
 
-keep if inrange(age, 30, 40)
-keep if inlist(year, 2013, 2016, 2019)
+keep if inrange(age, 25, 40)
+keep if inlist(year, 2016, 2019)
 
 local byvariables x_labinc_quantile
 

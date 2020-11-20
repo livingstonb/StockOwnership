@@ -27,11 +27,6 @@ gen certdep     = cds
 gen retacc      = retqliq
 gen lifeins     = cashli
 gen netbus      = bus
-gen x_stocks = stmutf + comutf + stocks
-gen x_liquid = liq + x_stocks + bond + (nmmf - stmutf - comutf)
-gen x_safe = liq + bond + cds + (nmmf - stmutf - comutf) + savbnd + bond
-gen x_risky = x_stocks + (nfin - vehic) + retqliq
-gen x_total = x_safe + x_risky
 
 // baseline
 gen brliqpos      = liqpos + direct
@@ -70,25 +65,10 @@ gen netbrliqnstocks = netbrliq - direct
 gen netbrilliqncstocks = netbrilliqnc + direct
 
 gen fwgt = round(wgt)
-xtile x_labinc_quantile = labinc [fw=fwgt], nquantiles(5)
-label variable x_labinc_quantile "Labor income quantile"
-
-xtile x_networth_quantile = networthnc [fw=fwgt], nquantiles(5)
-
-gen x_risk_share = x_risky / x_total if (x_total > 0)
-gen x_safe_share = x_safe / x_total if (x_total > 0)
-gen x_risky_share_of_liquid = x_stocks / x_liquid
-gen x_liquid_share = x_liquid / x_total if x_total > 0
-gen x_stock_share = x_stocks / x_total if x_total > 0
-gen x_leverage = x_total / networthnc if networthnc > 1000
-
-label define xbh_lbl 1 "Few months" 2 "One Year" 3 "Few years" 4 "5-10 years" 5 ">10 years"
-label values budgeting_horizon xbh_lbl
 
 gen h2m = netbrliq >=0 & (netbrliq <= labinc / (12 * 4))
 gen wh2m = (h2m == 1) & (netbrilliqnc > 0)
 gen wh2m2 = (h2m == 1) & (netbrilliqnc > labinc / 12)
-gen has_stocks = (x_stocks > 0)
 gen homeowner = (houses > 0) & !missing(houses)
 ////////////////////////////////////////////////////////////////////////////////
 
