@@ -1,7 +1,10 @@
 clear
+*** Reads and cleans the PSID ***
 
+*** Run do-file from PSID ***
 do build/input/cross_year/cross_year.do
 
+*** Rename variables ***
 rename ER13002 intid1999
 rename ER17002 intid2001
 rename ER21002 intid2003
@@ -228,8 +231,8 @@ rename ER71538 educ2017
 
 drop ER*
 
+*** Reshape long ***
 gen famid = _n
-
 #delimit ;
 reshape long intid stocks wealth cash house mortrem mortratewhole
 	mortratedecimal yearobtmort homequity earnings ageh lwgt
@@ -238,12 +241,11 @@ reshape long intid stocks wealth cash house mortrem mortratewhole
 	i(famid) j(year);
 #delimit cr
 
-gen consumption = cfood + chousing + ctransport + ceduc + cchild + chealth
-
 sort famid year
 order famid year
 drop if missing(intid)
 
+*** Code missings ***
 replace cash = . if (cash == 999999998) | (cash == 999999999)
 replace age = . if (age == 999)
 replace mortratewhole = . if (mortratewhole == 98) | (mortratewhole == 99)
@@ -253,37 +255,49 @@ replace mortrem = . if (mortrem == 9999998) | (mortrem == 9999999)
 replace yearobtmort = . if (yearobtmort == 9998) | (yearobtmort == 9999)
 replace educ = . if (educ == 99)
 
+*** Quintiles ***
+gen period = .
+local ip = 1
+gen quint_wealth = .
+gen quint_earn = .
+forvalues yr = 1999(2)2017 {
+	replace period = `ip' if year ==  `yr'
+
+	xtile qtempw = wealth [aw=lwgt] if year == `yr', nquantiles(5)
+	replace quint_wealth = qtempw if year == `yr'
+	
+	xtile qtempe = earnings [aw=lwgt] if year == `yr', nquantiles(5)
+	replace quint_earn = qtempe if year == `yr'
+
+	drop qtempw qtempe
+	local ip = `ip' + 1
+}
+
+*** New variables ***
+gen consumption = cfood + chousing + ctransport + ceduc + cchild + chealth
+
 gen imort = mortratewhole / 100 + mortratedecimal / 100000
 drop mortrate*
-
-drop if !inrange(age, 25, 55)
-drop if stocks < 0
 
 gen has_stocks = stocks > 0
 bysort famid: egen ever_had_stocks = max(has_stocks)
 bysort famid: egen nyears = count(stocks)
 
 gen liquid = stocks + cash
-gen stshare = stocks / liquid if liquid > 0 & !missing(liquid)
-gen cond_stshare = stshare if stocks > 0 & !missing(stocks)
+gen stshare = stocks / liquid if (liquid > 0) & !missing(liquid)
+gen cond_stshare = stshare if (stocks > 0) & !missing(stocks)
 
-gen period = .
-local ip = 1
-gen qwealth = .
-forvalues yr = 1999(2)2017 {
-	replace period = `ip' if year ==  `yr'
-	xtile qtemp = wealth [aw=lwgt] if year == `yr', nquantiles(5)
-	replace qwealth = qtemp if year == `yr'
-	drop qtemp
-	local ip = `ip' + 1
-}
 tsset famid period
 gen entered_stocks = (stocks > 0) & (L.stocks == 0) if !missing(stocks, L.stocks)
 gen left_stocks = (stocks == 0) & (L.stocks > 0) if !missing(stocks, L.stocks)
 
-gen homeowner = (house > 0) & !missing(house)
+gen homeowner = (house > 0) if !missing(house)
 
-* Merge with pce
+*** Cleaning and sample selection ***
+drop if !inrange(age, 25, 55)
+drop if stocks < 0
+
+*** Deflate nominal variables with PCE ***
 merge m:1 year month using "../SurveyOfConsumers/build/output/pce.dta", nogen keep(1 3)
 gen ptemp = pce if (year == 2015) & (month == 10)
 egen price2015 = max(ptemp)

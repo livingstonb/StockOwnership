@@ -1,9 +1,12 @@
+*** Read ***
 use build/output/output.dta, clear
 
+*** Merge with stock returns ***
 merge m:1 year month using "../SurveyOfConsumers/build/output/stocks_tr.dta", nogen keep(1 3)
 
 tsset famid period
 
+*** New variables ***
 gen congrowth = log(consumption) - log(L.consumption)
 gen earngrowth = (earnings - L.earnings) / L.earnings if (L.earnings >= 10000)
 tabstat congrowth [aw=lwgt], statistics(sd)
@@ -24,16 +27,7 @@ reg liqgrowth left_stocks ageh sqageh earngrowth educ if had_stocks [aw=lwgt], r
 gen had_no_stocks = (L.has_stocks == 0)
 reg congrowth entered_stocks ageh sqageh earngrowth educ if had_no_stocks [aw=lwgt], robust
 
-
-
-
-
-
-
-
-gen in_sample = has_stocks & L.has_stocks
-
-
+*** Consumption growth ***
 
 * Stock market holders
 tabstat congrowth [aw=lwgt] if has_stocks & L.has_stocks, statistics(mean sd)
@@ -56,5 +50,3 @@ bysort famid: egen yrstocks = total(has_stocks), missing
 tabstat congrowth [aw=lwgt] if (yrstocks >= 4) & !missing(yrstocks), statistics(mean sd)
 corr congrowth areturn [aw=lwgt] if (yrstocks >= 4) & !missing(yrstocks)
 
-
-* 

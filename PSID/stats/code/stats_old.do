@@ -39,12 +39,6 @@ use build/output/output.dta
 merge m:1 year month using "../SurveyOfConsumers/build/output/stocks.dta", nogen
 rename educ educyears
 
-gen x_labinc_quintile = .
-forvalues yr = 1999(2)2017 {
-	xtile xtemp = earnings [aw=lwgt] if year == `yr', nquantiles(5)
-	replace x_labinc_quintile = xtemp if year == `yr'
-	drop xtemp
-}
 
 tsset famid year
 predict stockexp, xb
