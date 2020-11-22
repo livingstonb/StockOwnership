@@ -16,6 +16,134 @@ rename ER53002 intid2013
 rename ER60002 intid2015
 rename ER66002 intid2017
 
+// partition sample by creating variable
+// invtype = always, sometimes, rarely, never
+
+// NOTE 1994 and earlier included IRAs
+
+// add planned retirement age
+
+// infer monthly stockholding patters from dividends
+// infer past stockholders from dividends?
+
+/*
+rename V21833 divh_m1y1992
+rename ER3220 divh_m1y1993
+rename ER6220 divh_m1y1994
+rename ER8337 divh_m1y1995
+rename ER11230 divh_m1y1996
+rename ER14496 divh_m1y1999
+rename ER18653 divh_m1y2000
+rename ER22024 divh_m1y2002
+rename ER26005 divh_m1y2004
+rename ER37023 divh_m1y2006
+rename ER43014 divh_m1y2008
+rename ER48336 divh_m1y2010
+rename ER54013 divh_m1y2012
+rename ER61055 divh_m1y2014
+rename ER67107 divh_m1y2016
+
+rename V21834 divh_m2y1992
+rename ER3221 divh_m2y1993
+rename ER6221 divh_m2y1994
+rename ER8338 divh_m2y1995
+rename ER11231 divh_m2y1996
+rename ER14497 divh_m2y1998
+rename ER18654 divh_m2y2000
+rename ER22025 divh_m2y2002
+rename ER26006 divh_m2y2004
+rename ER37024 divh_m2y2006
+rename ER43015 divh_m2y2008
+rename ER48337 divh_m2y2010
+rename ER54014 divh_m2y2012
+rename ER61056 divh_m2y2014
+rename ER67108 divh_m2y2016
+
+rename V21835 divh_m3y1992
+rename ER3222 divh_m3y1993
+rename ER6222 divh_m3y1994
+rename ER8339 divh_m3y1995
+rename ER11232 divh_m3y1996
+rename ER14498 divh_m3y1998
+rename ER18655 divh_m3y2000
+rename ER22026 divh_m3y2002
+rename ER26007 divh_m3y2004
+rename ER37025 divh_m3y2006
+rename ER43016 divh_m3y2008
+rename ER48338 divh_m3y2010
+rename ER54015 divh_m3y2012
+rename ER61057 divh_m3y2014
+rename ER67109 divh_m3y2016
+*/
+
+rename ER3217 wdivh1994
+rename ER6217 wdivh1995
+rename ER8334 wdivh1996
+rename ER11227 wdivh1997
+rename ER14493 wdivh1999
+rename ER18649 wdivh2001
+rename ER22019 wdivh2003
+rename ER26000 wdivh2005
+rename ER37018 wdivh2007
+rename ER43009 wdivh2009
+rename ER48331 wdivh2011
+rename ER54008 wdivh2013
+rename ER61050 wdivh2015
+rename ER67102 wdivh2017
+
+rename ER3523 wdivsp1994
+rename ER6524 wdivsp1995
+rename ER8641 wdivsp1996
+rename ER11523 wdivsp1997
+rename ER14789 wdivsp1999
+rename ER18965 wdivsp2001
+rename ER22352 wdivsp2003
+rename ER26333 wdivsp2005
+rename ER37351 wdivsp2007
+rename ER43342 wdivsp2009
+rename ER48667 wdivsp2011
+rename ER54361 wdivsp2013
+rename ER61437 wdivsp2015
+rename ER67457 wdivsp2017
+
+rename V10940 gift1y1984
+rename V17384 gift1y1989
+rename ER3838 gift1y1994
+rename ER15117 gift1y1999
+rename ER19313 gift1y2001
+rename ER22708 gift1y2003
+rename ER26689 gift1y2005
+rename ER37707 gift1y2007
+rename ER43698 gift1y2009
+rename ER49043 gift1y2011
+rename ER54799 gift1y2013
+rename ER61913 gift1y2015
+rename ER67967 gift1y2017
+
+rename ER3843 gift2y1994
+rename ER15122 gift2y1999
+rename ER19318 gift2y2001
+rename ER22713 gift2y2003
+rename ER26694 gift2y2005
+rename ER37712 gift2y2007
+rename ER43703 gift2y2009
+rename ER49048 gift2y2011
+rename ER54804 gift2y2013
+rename ER61921 gift2y2015
+rename ER67975 gift2y2017
+
+rename ER3848 gift3y1994
+rename ER15127 gift3y1999
+rename ER19323 gift3y2001
+rename ER22718 gift3y2003
+rename ER26699 gift3y2005
+rename ER37717 gift3y2007
+rename ER43708 gift3y2009
+rename ER49053 gift3y2011
+rename ER54809 gift3y2013
+rename ER61929 gift3y2015
+rename ER67983 gift3y2017
+
 rename ER16515A1 cfood1999
 rename ER16515A5 chousing1999
 rename ER16515B6 ctransport1999
@@ -87,6 +215,17 @@ rename ER58212D3 chealth2013
 rename ER65439 chealth2015
 rename ER71517 chealth2017
 
+rename S410 wstocks1999
+rename S510 wstocks2001
+rename S610 wstocks2003
+rename S710 wstocks2005
+rename S810 wstocks2007
+rename ER46952 wstocks2009
+rename ER52356 wstocks2011
+rename ER58169 wstocks2013
+rename ER65366 wstocks2015
+rename ER71443 wstocks2017
+
 rename S411 stocks1999
 rename S511 stocks2001
 rename S611 stocks2003
@@ -97,6 +236,32 @@ rename ER52358 stocks2011
 rename ER58171 stocks2013
 rename ER65368 stocks2015
 rename ER71445 stocks2017
+
+rename V17365 stockbought1989
+rename ER3805 stockbought1994
+rename ER15083 stockbought1999
+rename ER19279 stockbought2001
+rename ER22674 stockbought2003
+rename ER26655 stockbought2005
+rename ER37673 stockbought2007
+rename ER43664 stockbought2009
+rename ER49009 stockbought2011
+rename ER54764 stockbought2013
+rename ER61875 stockbought2015
+rename ER67929 stockbought2017
+
+rename V17368 soldstock1989
+rename ER3811 soldstock1994
+rename ER15089 soldstock1999
+rename ER19285 soldstock2001
+rename ER22680 soldstock2003
+rename ER26661 soldstock2005
+rename ER37679 soldstock2007
+rename ER43670 soldstock2009
+rename ER49015 soldstock2011
+rename ER54770 soldstock2013
+rename ER61881 soldstock2015
+rename ER67935 soldstock2017
 
 rename S417 wealth1999
 rename S517 wealth2001
@@ -128,6 +293,20 @@ rename ER36029 house2007
 rename ER42030 house2009
 rename ER47330 house2011
 rename ER53030 house2013
+
+rename V10903 vehicles1984
+rename V17320 vehicles1989
+rename ER3726 vehicles1994
+rename ER14997 vehicles1999
+rename ER19193 vehicles2001
+rename ER22558 vehicles2003
+rename ER26539 vehicles2005
+rename ER37557 vehicles2007
+rename ER43548 vehicles2009
+rename ER48873 vehicles2011
+rename ER54620 vehicles2013
+rename ER61731 vehicles2015
+rename ER67784 vehicles2017
 
 rename ER13047 mortrem1999
 rename ER17052 mortrem2001
@@ -237,7 +416,8 @@ gen famid = _n
 reshape long intid stocks wealth cash house mortrem mortratewhole
 	mortratedecimal yearobtmort homequity earnings ageh lwgt
 	cfood chousing ctransport ceduc cchild chealth
-	educ month,
+	educ month gift1y gift2y gift3y soldstock stockbought vehicles
+	wdivh wdivsp,
 	i(famid) j(year);
 #delimit cr
 
@@ -255,11 +435,15 @@ replace mortrem = . if (mortrem == 9999998) | (mortrem == 9999999)
 replace yearobtmort = . if (yearobtmort == 9998) | (yearobtmort == 9999)
 replace educ = . if (educ == 99)
 
+label variable wdivh "Head received dividends in the previous year"
+label variable wdivsp "Spouse received divdends in the previous year"
+
 *** Quintiles ***
 gen period = .
 local ip = 1
 gen quint_wealth = .
 gen quint_earn = .
+label define quintlbl 1 "Bottom" 5 "Top"
 forvalues yr = 1999(2)2017 {
 	replace period = `ip' if year ==  `yr'
 
@@ -272,24 +456,41 @@ forvalues yr = 1999(2)2017 {
 	drop qtempw qtempe
 	local ip = `ip' + 1
 }
+label values quint_wealth quintlbl
+label values quint_earn quintlbl
 
 *** New variables ***
 gen consumption = cfood + chousing + ctransport + ceduc + cchild + chealth
+
+egen gifts = rowtotal(gift1y gift2y gift3y), missing
+drop gift1y gift2y gift3y
+
+gen recddividends = .
+replace recddividends = 1 if (wdivh == 1)
+replace recddividends = 1 if (wdivsp == 1)
+replace recddividends = 0 if (wdivh == 0) & (wdivsp == 0)
+label variable recddividends "Received dividend income in the previous year"
 
 gen imort = mortratewhole / 100 + mortratedecimal / 100000
 drop mortrate*
 
 gen has_stocks = stocks > 0
-bysort famid: egen ever_had_stocks = max(has_stocks)
+bysort famid: egen ever_had_stocks = max(has_stocks) if !missing(stocks)
 bysort famid: egen nyears = count(stocks)
+bysort famid: egen yrs_stockholder = total(has_stocks)
+gen time_in = yrs_stockholder / nyears if (nyears > 0)
 
 gen liquid = stocks + cash
 gen stshare = stocks / liquid if (liquid > 0) & !missing(liquid)
-gen cond_stshare = stshare if (stocks > 0) & !missing(stocks)
+gen cond_stshare_liquid = stshare if (stocks > 0) & !missing(stocks)
+gen cond_stshare_wealth = stocks / wealth if (wealth > 0) & (stocks > 0)
 
 tsset famid period
 gen entered_stocks = (stocks > 0) & (L.stocks == 0) if !missing(stocks, L.stocks)
 gen left_stocks = (stocks == 0) & (L.stocks > 0) if !missing(stocks, L.stocks)
+gen always_holding = (yrs_stockholder >= nyears - 1) if (nyears >= 6)
+gen recently_holding = (has_stocks == 1) & (L.has_stocks == 1) & (always_holding == 0) if !missing(always_holding)
+gen new_entrants = (entered_stocks == 1) & (always_holding == 0) if !missing(always_holding, entered_stocks)
 
 gen homeowner = (house > 0) if !missing(house)
 
@@ -306,7 +507,7 @@ drop ptemp
 gen pricelev = pce / price2015
 drop pce price2015
 
-local nomvars consumption wealth stocks earnings
+local nomvars consumption wealth stocks earnings gifts
 foreach nvar of local nomvars {
 	replace `nvar' = `nvar' / pricelev
 }

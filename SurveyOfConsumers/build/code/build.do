@@ -26,10 +26,12 @@ save "build/output/stock_expectations.dta", replace
 
 
 
-
+label variable YYYY "Year"
 #delimit ;
 twoway (scatter pstock_le40 YYYY) (scatter pstock_ge60 YYYY) if (YYYY >= 2002),
-	legend(label(1 "Pessimistic") label(2 "Optimistic"));
+	legend(label(1 "Pessimistic") label(2 "Optimistic") region(lstyle(none)))
+	graphregion(color(white)) ytitle("Share of respondents");
 #delimit cr
+graph export "stats/output/stock_expectations.png", replace
 
 sum has_stocks [aw=WT] if inrange(AGE, 25, 55) & (YYYY >= 2000) & (month == 1), detail
