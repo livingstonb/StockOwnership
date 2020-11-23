@@ -8,8 +8,8 @@ params.xcurv = 0.1;
 params.bbeta = 0.98;
 params.r = 0.005;
 
-rbeliefs = [0.5 0.4 0.1; 0.1 0.2 0.7];
-rbeliefs_bc = reshape(rbeliefs, [1 2 3]);
+r_e_dist = [0.1; 0.2; 0.4; 0.2; 0.1];
+r_e_grid = linspace(
 
 rgrid = [0.05 0.02 -0.02];
 
@@ -35,11 +35,7 @@ maxiters = 1e5;
 
 while (dtol > 1e-8) && (iter <= maxiters)
     
-    
-    
-    
-    
-    
+
     
     con = xgrid + ygrid - sav;
     R_p = 1 + (1 - sshare) .* params.r + sshare .* rbeliefs_bc;

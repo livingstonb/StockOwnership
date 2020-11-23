@@ -76,6 +76,68 @@ rename ER61057 divh_m3y2014
 rename ER67109 divh_m3y2016
 */
 
+rename ER13008A famchange1999
+rename ER17007 famchange2001
+rename ER21007 famchange2003
+rename ER25007 famchange2005
+rename ER36007 famchange2007
+rename ER42007 famchange2009
+rename ER47307 famchange2011
+rename ER53007 famchange2013
+rename ER60007 famchange2015
+rename ER66007 famchange2017
+
+rename V17363 netputinstocks1989
+rename ER3800 netputinstocks1994
+rename ER15078 netputinstocks1999
+rename ER19274 netputinstocks2001
+rename ER22669 netputinstocks2003
+rename ER26650 netputinstocks2005
+rename ER37668 netputinstocks2007
+rename ER43659 netputinstocks2009
+rename ER49004 netputinstocks2011
+
+rename ER13114 boughtvehicle1y1999
+rename ER17125 boughtvehicle1y2001
+rename ER21764 boughtvehicle1y2003
+rename ER25722 boughtvehicle1y2005
+rename ER36740 boughtvehicle1y2007
+rename ER42743 boughtvehicle1y2009
+rename ER48061 boughtvehicle1y2011
+rename ER53757 boughtvehicle1y2013
+rename ER60816 boughtvehicle1y2015
+rename ER66864 boughtvehicle1y2017
+
+rename ER13144 boughtvehicle2y1999
+rename ER17155 boughtvehicle2y2001
+rename ER21793 boughtvehicle2y2003
+rename ER25750 boughtvehicle2y2005
+rename ER36768 boughtvehicle2y2007
+rename ER42766 boughtvehicle2y2009
+rename ER48086 boughtvehicle2y2011
+rename ER53781 boughtvehicle2y2013
+rename ER60840 boughtvehicle2y2015
+rename ER66888 boughtvehicle2y2017
+
+rename ER13174 boughtvehicle3y1999
+rename ER17185 boughtvehicle3y2001
+rename ER21822 boughtvehicle3y2003
+rename ER25778 boughtvehicle3y2005
+rename ER36796 boughtvehicle3y2007
+rename ER42789 boughtvehicle3y2009
+rename ER48111 boughtvehicle3y2011
+rename ER53805 boughtvehicle3y2013
+rename ER60864 boughtvehicle3y2015
+rename ER66912 boughtvehicle3y2017
+
+rename ER28037E2 cvacations2005
+rename ER41027E2 cvacations2007
+rename ER46971E2 cvacations2009
+rename ER52395E2 cvacations2011
+rename ER58212E2 cvacations2013
+rename ER65447 cvacations2015
+rename ER71526 cvacations2017
+
 rename ER3217 wdivh1994
 rename ER6217 wdivh1995
 rename ER8334 wdivh1996
@@ -236,6 +298,28 @@ rename ER52358 stocks2011
 rename ER58171 stocks2013
 rename ER65368 stocks2015
 rename ER71445 stocks2017
+
+rename ER15007 ostocks1999
+rename ER19203 ostocks2001
+rename ER22568 ostocks2003
+rename ER26549 ostocks2005
+rename ER37567 ostocks2007
+rename ER43558 ostocks2009
+rename ER48883 ostocks2011
+rename ER54634 ostocks2013
+rename ER61745 ostocks2015
+rename ER67798 ostocks2017
+
+rename ER15006 wostock1999
+rename ER19202 wostock2001
+rename ER22567 wostock2003
+rename ER26548 wostock2005
+rename ER37566 wostock2007
+rename ER43557 wostock2009
+rename ER48882 wostock2011
+rename ER54633 wostock2013
+rename ER61744 wostock2015
+rename ER67797 wostock2017
 
 rename V17365 stockbought1989
 rename ER3805 stockbought1994
@@ -408,16 +492,17 @@ rename ER58223 educ2013
 rename ER65459 educ2015
 rename ER71538 educ2017
 
-drop ER*
+drop ER* S* V*
 
 *** Reshape long ***
 gen famid = _n
 #delimit ;
 reshape long intid stocks wealth cash house mortrem mortratewhole
 	mortratedecimal yearobtmort homequity earnings ageh lwgt
-	cfood chousing ctransport ceduc cchild chealth
+	cfood chousing ctransport ceduc cchild chealth wstocks
 	educ month gift1y gift2y gift3y soldstock stockbought vehicles
-	wdivh wdivsp,
+	wdivh wdivsp boughtvehicle1y boughtvehicle2y famchange
+	boughtvehicle3y cvacations netputinstocks ostocks wostock,
 	i(famid) j(year);
 #delimit cr
 
@@ -434,6 +519,11 @@ replace house = . if (house == 9999998) | (house == 9999999)
 replace mortrem = . if (mortrem == 9999998) | (mortrem == 9999999)
 replace yearobtmort = . if (yearobtmort == 9998) | (yearobtmort == 9999)
 replace educ = . if (educ == 99)
+replace gift1y = . if inrange(gift1y, 9999997, 9999999)
+replace gift2y = . if inrange(gift1y, 9999997, 9999999)
+replace gift3y = . if inrange(gift1y, 9999997, 9999999)
+recode wostock (8 9 = .) (5 = 0)
+replace ostock = . if inrange(ostock, 999999998, 999999999)
 
 label variable wdivh "Head received dividends in the previous year"
 label variable wdivsp "Spouse received divdends in the previous year"
@@ -465,10 +555,18 @@ gen consumption = cfood + chousing + ctransport + ceduc + cchild + chealth
 egen gifts = rowtotal(gift1y gift2y gift3y), missing
 drop gift1y gift2y gift3y
 
+bysort famid: gen gtemp = sum(gifts)
+gen recdgifts = (gifts > 0) & !missing(gifts)
+drop gtemp
+
+gen nofamchange = (famchange == 0)
+gen nomajorfamchange = inlist(famchange, 0, 1)
+
+gen newcar = (boughtvehicle1y == 1) | (boughtvehicle2y == 1) | (boughtvehicle3y == 1)
+
 gen recddividends = .
-replace recddividends = 1 if (wdivh == 1)
-replace recddividends = 1 if (wdivsp == 1)
-replace recddividends = 0 if (wdivh == 0) & (wdivsp == 0)
+replace recddividends = 1 if (wdivh == 1) | (wdivsp == 1)
+replace recddividends = 0 if (wdivh == 5) & (wdivsp == 5)
 label variable recddividends "Received dividend income in the previous year"
 
 gen imort = mortratewhole / 100 + mortratedecimal / 100000
@@ -486,13 +584,27 @@ gen cond_stshare_liquid = stshare if (stocks > 0) & !missing(stocks)
 gen cond_stshare_wealth = stocks / wealth if (wealth > 0) & (stocks > 0)
 
 tsset famid period
+gen switch = (stocks > 0) & (L.stocks == 0)
+replace switch = 1 if (stocks == 0) & (L.stocks > 0)
+replace switch = . if missing(L.stocks)
+
 gen entered_stocks = (stocks > 0) & (L.stocks == 0) if !missing(stocks, L.stocks)
 gen left_stocks = (stocks == 0) & (L.stocks > 0) if !missing(stocks, L.stocks)
 gen always_holding = (yrs_stockholder >= nyears - 1) if (nyears >= 6)
 gen recently_holding = (has_stocks == 1) & (L.has_stocks == 1) & (always_holding == 0) if !missing(always_holding)
 gen new_entrants = (entered_stocks == 1) & (always_holding == 0) if !missing(always_holding, entered_stocks)
 
+gen investortype = .
+replace investortype = 0 if (time_in == 0) & (nyears >= 6)
+replace investortype = 1 if (time_in > 0) & (time_in < 1/2) & (nyears >= 6)
+replace investortype = 2 if (time_in >= 1/2) & !missing(time_in) & (nyears >= 6)
+label define invtypelbl 0 "Nonstockholder" 1 "Stock dabbler" 2 "Buy-and-hold"
+label values investortype invtypelbl
+
 gen homeowner = (house > 0) if !missing(house)
+gen newhome = (L.house == 0) & (house > 0)
+gen largepurchase = (newcar == 1) | (newhome == 1) | ((cvacations > 3000) & !missing(cvacations))
+
 
 *** Cleaning and sample selection ***
 drop if !inrange(age, 25, 55)
@@ -511,5 +623,8 @@ local nomvars consumption wealth stocks earnings gifts
 foreach nvar of local nomvars {
 	replace `nvar' = `nvar' / pricelev
 }
+
+** Merge with stock returns ***
+merge m:1 year month using "../SurveyOfConsumers/build/output/stocks.dta", nogen keep(1 3)
 
 save build/output/output.dta, replace
