@@ -12,8 +12,7 @@ def create_grid(gmin, gmax, gcurv, n):
 def get_params():
 	params = dict()
 	params['nx'] = 75
-	params['xcurv'] = 0.1
-	params['xmin'] = 0
+	params['xcurv'] = 0.2
 	params['xmax'] = 25
 	params['beta'] = 0.9
 	params['rb'] = 0.005
@@ -23,12 +22,18 @@ def get_params():
 def get_rdist():
 	returns = dict()
 	returns['dist'] = np.array([0.3, 0.4, 0.3])
-	returns['grid'] = np.array([-0.01, 0.0, 0.01])
+	returns['grid'] = np.array([-0.005, 0.0, 0.005])
 	returns['mu'] = np.array([0, 0.01, 0.015])
 	returns['mutrans'] = np.array([[1/3, 1/3, 1/3], [1/3, 1/3, 1/3], [1/3, 1/3, 1/3]])
 	returns['pmu'] = np.array([1/3, 1/3, 1/3])
 	returns['nz'] = len(returns['mu'])
 	return returns
+
+def get_income():
+	income = dict()
+	income['vec'] = np.array([0.2, 0.3])
+	income['trans'] = np.array([[0.5, 0.5],[0.5, 0.5]])
+	return income
 
 def utility(c):
 	return np.log(c)
@@ -49,6 +54,8 @@ class PolicyIterator:
 		self.bond = None
 		self.stock = None
 		self.V = None
+
+		self.Emat = np.kron(self.y['trans'], self.r['trans'])
 	
 	def makeGuess(self):
 		self.con = self.p['rb'] * self.x['vec']
@@ -63,6 +70,7 @@ class PolicyIterator:
 		
 		A = np.array([[1, 0], [0, 1], [1, 1]])
 		lb = np.array([1.0e-8, 0, 0])
+
 
 		while (norm > self.tol) and (it < self.maxiters):
 			self.Vinterp = []
@@ -107,6 +115,7 @@ class PolicyIterator:
 
 		x_next = (1 + self.p['rb']) * b + (1 + self.r['grid'] + self.r['mu'][iz]) * s + self.y
 		
+		# V_next = np.zeros((self.p['nx'], self.r['nx'], self))
 		V_next = np.zeros((len(self.r['grid']),))
 		for iz2 in range(self.r['nz']):
 			V_next +=  self.Vinterp[iz2](x_next) / 3.0
