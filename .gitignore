@@ -4,3 +4,7 @@
 **/docs
 *~
 *.xls
+*.so
+*.c
+*.pyc
+**/__pycache__
