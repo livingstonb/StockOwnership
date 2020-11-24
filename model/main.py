@@ -18,7 +18,7 @@ def get_params():
 	params['xmax'] = 25
 	params['beta'] = 0.9
 	params['rb'] = 0.005
-	params['mutil'] = 0.05
+	params['mutil'] = 0
 	return params
 
 def get_rdist():

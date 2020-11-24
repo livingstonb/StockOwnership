@@ -48,15 +48,17 @@ cdef class PolicyIterator:
 		cdef:
 			double[:,:,:] bond_update, stock_update, V_update, trans
 			double[:,:] A
-			double[:] lb, ub, x0, v0, v1, v, transvec
+			double[:] v0, v1, v, transvec
+			double x0[2]
 			double norm, xval, yval
 			long ix, iy, iz, it
+			list lb, ub
+			object bounds, opts
 
 		norm = 1e5
 		it = 0
-		
-		A = np.array([[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
-		lb = np.array([1.0e-8, 0.0, 0.0])
+
+		opts = {'gtol':1.0e-7}
 
 		while (norm > self.tol) and (it < self.maxiters):
 			self.Vinterp = []
@@ -70,8 +72,10 @@ cdef class PolicyIterator:
 			V_update = np.zeros(np.shape(self.V))
 			for ix in range(self.p['nx']):
 				xval = self.x[ix]
-				ub = np.array([np.inf, np.inf, xval - 1.0e-5])
-				constraint = optimize.LinearConstraint(A, lb, ub, keep_feasible=True)
+				# constraint = optimize.LinearConstraint(A, lb, ub, keep_feasible=True)
+				lb = [1.0e-8, 0.0]
+				ub = [xval - 1.0e-8, 1.0 - 1.0e-8]
+				bounds = optimize.Bounds(lb, ub, keep_feasible=[True, True])
 
 				for iy in range(self.y['ny']):
 					yval = self.y['vec'][iy]
@@ -84,13 +88,13 @@ cdef class PolicyIterator:
 						transvec = np.asarray(trans).flatten()
 
 						fn = lambda v: -self.evaluateV(xval, iy, iz, transvec, v)
-						x0 = np.array([self.bond[ix,iy,iz], self.stock[ix,iy,iz]])
-						res = optimize.minimize(fn, x0, constraints=(constraint), method='SQSLP')
+
+						x0[0] = self.bond[ix,iy,iz] + self.stock[ix,iy,iz]
+						x0[1] = self.stock[ix,iy,iz] / x0[0]
+						res = optimize.minimize(fn, np.asarray(x0), bounds=bounds, method='L-BFGS-B', options=opts)
 						bond_update[ix,iy,iz] = res.x[0]
 						stock_update[ix,iy,iz] = res.x[1]
 						V_update[ix,iy,iz] = -fn(res.x)
-				
-			self.V = V_update
 			
 			v0 = (np.asarray(self.bond) - np.asarray(bond_update)).flatten()
 			v1 = (np.asarray(self.stock) - np.asarray(stock_update)).flatten()
@@ -100,6 +104,7 @@ cdef class PolicyIterator:
 			print(f'Norm = {norm}')
 			self.bond = bond_update
 			self.stock = stock_update
+			self.V = V_update
 
 			it += 1
 		
@@ -115,9 +120,9 @@ cdef class PolicyIterator:
 			double b, s, c, u, EV
 			long iy2, iz2, ieps
 
-		b = v[0]
-		s = v[1]
-		c = xval - b - s
+		b = v[0] * (1 - v[1])
+		s = v[0] * v[1]
+		c = xval - v[0]
 		u = cfunctions.utility(c) + self.p['mutil'] * cfunctions.utility(b)
 
 		x_next = np.zeros((self.rshockdist.shape[0],))
