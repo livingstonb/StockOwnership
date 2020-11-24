@@ -58,12 +58,12 @@ def main():
 
 def plotAllocation(policyIterator):
 	fig, axes = plt.subplots(nrows=3, ncols=3)
-	assets = policyIterator.bond + policyIterator.stock
-	chi = policyIterator.stock / assets
+	assets = np.asarray(policyIterator.bond) + np.asarray(policyIterator.stock)
+	chi = np.asarray(policyIterator.stock) / assets
 	chi = np.nan_to_num(chi)
-	for iy in range(3):
+	for iy in range(2):
 		for iz in range(3):
-			axes[iy,iz].plot(policyIterator.x['vec'], chi[:,iy,ip])
+			axes[iy,iz].plot(policyIterator.x, np.asarray(chi[:,iy,iz]))
 	
 	plt.show()
 	

@@ -6,6 +6,7 @@ from scipy.interpolate import interp1d
 from scipy import optimize
 from misc cimport cfunctions
 from misc.Interpolant cimport Interpolant
+cimport cython
 
 cdef class PolicyIterator:
 	cdef:
@@ -35,17 +36,19 @@ cdef class PolicyIterator:
 		self.Rmat = 1 + np.asarray(self.rshockgrid).reshape((1,-1)) + self.r['grid'].reshape((-1,1))
 	
 	def makeGuess(self):
-		tempcon = self.p['rb'] * np.asarray(self.x)
-		self.con = np.tile(tempcon[:,None,None], (1,self.y['ny'],self.r['nz']))
+		tempcon = (self.p['rb'] + 0.01) * np.asarray(self.x[:,None]) + 0.5 * np.reshape(self.y['vec'], (1,-1))
+		self.con = np.tile(tempcon[:,:,None], (1,1,self.r['nz']))
 		self.bond = (np.asarray(self.x[:,None,None])  - np.asarray(self.con)) / 2.0
 		self.stock = self.bond
 		self.V = cfunctions.utility3d(self.con) / (1 - np.asarray(self.p['beta']))
-		
+
+	@cython.boundscheck(False)
+	@cython.wraparound(False)
 	def iterate(self):
 		cdef:
-			double[:,:,:] bond_update, stock_update, V_update
-			double[:,:] A, ytrans
-			double[:] lb, ub, x0, v0, v1, v
+			double[:,:,:] bond_update, stock_update, V_update, trans
+			double[:,:] A
+			double[:] lb, ub, x0, v0, v1, v, transvec
 			double norm, xval, yval
 			long ix, iy, iz, it
 
@@ -60,10 +63,6 @@ cdef class PolicyIterator:
 			for iy in range(self.y['ny']):
 				self.Vinterp.append([])
 				for iz in range(self.r['nz']):
-					# self.Vinterp[iy].append(
-					# 	interp1d(self.x, self.V[:,iy,iz],
-					# 		bounds_error=False, fill_value=(self.V[0,iy,iz], self.V[-1,iy,iz]))
-					# )
 					self.Vinterp[iy].append(Interpolant(self.x, self.V[:,iy,iz]))
 
 			bond_update = np.zeros(np.shape(self.bond))
@@ -76,12 +75,17 @@ cdef class PolicyIterator:
 
 				for iy in range(self.y['ny']):
 					yval = self.y['vec'][iy]
-					ytrans = np.asarray(self.y['trans'][iy,:]).reshape((1,-1))
+					iytrans = np.reshape(self.y['trans'][iy,:], (-1,1,1))
 
 					for iz in range(self.r['nz']):
-						fn = lambda v: -self.evaluateV(xval, ytrans, iy, iz, v)
+						izmutrans = np.reshape(self.r['mutrans'][iz,:], (1,-1,1))
+						epstrans = np.reshape(self.rshockdist, (1,1,-1))
+						trans = iytrans * izmutrans * epstrans
+						transvec = np.asarray(trans).flatten()
+
+						fn = lambda v: -self.evaluateV(xval, iy, iz, transvec, v)
 						x0 = np.array([self.bond[ix,iy,iz], self.stock[ix,iy,iz]])
-						res = optimize.minimize(fn, x0, constraints=(constraint), method='trust-constr')
+						res = optimize.minimize(fn, x0, constraints=(constraint), method='SQSLP')
 						bond_update[ix,iy,iz] = res.x[0]
 						stock_update[ix,iy,iz] = res.x[1]
 						V_update[ix,iy,iz] = -fn(res.x)
@@ -101,23 +105,32 @@ cdef class PolicyIterator:
 		
 		print("Converged")
 
-	cdef double evaluateV(self, double xval, double[:,:] ytrans, long iy, long iz, double[:] v):
+
+	@cython.boundscheck(False)
+	@cython.wraparound(False)
+	cdef double evaluateV(self, double xval, long iy, long iz, double[:] trans, double[:] v):
 		cdef:
-			double[:,:] x_next, V_next
+			double[:,:,:] V_next
+			double[:] x_next, vtemp
 			double b, s, c, u, EV
-			long iz2
+			long iy2, iz2, ieps
 
 		b = v[0]
 		s = v[1]
 		c = xval - b - s
 		u = cfunctions.utility(c) + self.p['mutil'] * cfunctions.utility(b)
 
-		x_next = (1 + self.p['rb']) * b + np.asarray(self.Rmat[iz,:]) * s + self.y['bc']
-		
-		V_next = np.zeros(np.shape(x_next))
-		for iz2 in range(self.r['nz']):
-			V_next +=  np.asarray(self.Vinterp[iy][iz2].interp_mat2d(x_next)) / float(self.r['nz'])
+		x_next = np.zeros((self.rshockdist.shape[0],))
+		V_next = np.zeros((self.y['ny'],self.r['nz'],self.rshockdist.shape[0]))
+		for iy2 in range(self.y['ny']):
+			for iz2 in range(self.r['nz']):
+				for ieps in range(self.rshockdist.shape[0]):
+					x_next[ieps] = (1 + self.p['rb']) * b + np.asarray(self.Rmat[iz,ieps]) * s + self.y['vec'][iy2]
+				
+				vtemp = self.Vinterp[iy2][iz2].interp_mat1d(x_next)
+				for ieps in range(self.rshockdist.shape[0]):
+					V_next[iy2,iz2,ieps] = vtemp[ieps]
 
-		EV = np.matmul(np.matmul(ytrans, V_next), self.rshockdist)
+		EV = np.dot(trans, np.asarray(V_next).flatten())
 
 		return u + self.p['beta'] * EV

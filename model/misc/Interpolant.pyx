@@ -19,9 +19,25 @@ cdef class Interpolant:
 			double z
 
 		ix = fastSearchSingleInput(self.grid, x)
+
 		z = (self.grid[ix] - x) / (self.grid[ix] - self.grid[ix-1])
 		z = fmin(fmax(z, 0), 1)
-		return z
+		return z * self.grid[ix-1] + (1 - z) * self.grid[ix]
+
+	@cython.boundscheck(False)
+	@cython.wraparound(False)
+	def interp_mat1d(self, double[:] x):
+		cdef:
+			double[:] fitted
+			long n, i
+
+		n = x.shape[0]
+		fitted = np.zeros(np.shape(x))
+
+		for i in range(n):
+			fitted[i] = self.interp(x[i])
+
+		return fitted
 
 	@cython.boundscheck(False)
 	@cython.wraparound(False)
@@ -40,6 +56,24 @@ cdef class Interpolant:
 
 		return fitted
 
+	@cython.boundscheck(False)
+	@cython.wraparound(False)
+	def interp_mat3d(self, double[:,:,:] x):
+		cdef:
+			double[:,:,:] fitted
+			long n, m, l, i, j, k
+
+		n = x.shape[0]
+		m = x.shape[1]
+		l = x.shape[2]
+		fitted = np.zeros((n,m,l))
+
+		for i in range(n):
+			for j in range(m):
+				for k in range(l):
+					fitted[i,j,k] = self.interp(x[i,j,k])
+
+		return fitted
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
