@@ -24,6 +24,9 @@ cdef class PolicyIterator:
 		public double[:,:] Rmat
 		public double tol
 
+		double[:] curr_R, curr_trans
+		double curr_xval
+
 	def __init__(self, params, returns, income, xgrid):
 		self.p = params
 		self.r = returns
@@ -48,14 +51,13 @@ cdef class PolicyIterator:
 	def iterate(self):
 		cdef:
 			double[:,:,:] bond_update, stock_update, V_update, trans, epstrans
-			double[:,:,:] izmutrans, iytrans
+			double[:,:,:] izmutrans, iytrans, iytrans_aug
 			double[:,:] A
-			double[:] v0, v1, v, transvec
+			double[:] v0, v1, v, transvec, lb, ub, Rvec
 			double x0[2]
 			double norm, xval, yval
 			long ix, iy, iz, it
-			list lb, ub
-			object bounds, opts
+			object bounds, opts, result
 
 		norm = 1e5
 		it = 0
@@ -64,6 +66,7 @@ cdef class PolicyIterator:
 			bmin = 0
 		else:
 			bmin = 1.0e-8
+		lb = np.array([bmin, 0.0])
 
 		opts = {'gtol':1.0e-7}
 		epstrans = np.reshape(self.r.eps_dist, (1,1,-1))
@@ -79,29 +82,26 @@ cdef class PolicyIterator:
 			stock_update = np.zeros(np.shape(self.stock))
 			V_update = np.zeros(np.shape(self.V))
 			for ix in range(self.nx):
-				xval = self.x[ix]
-
-				lb = [bmin, 0.0]
-				ub = [xval - 1.0e-8, 1.0 - bmin]
+				self.curr_xval = self.x[ix]
+				ub = np.array([self.curr_xval - 1.0e-8, 1.0 - bmin])
 				bounds = optimize.Bounds(lb, ub, keep_feasible=[True, True])
 
 				for iy in range(self.y.ny):
-					yval = self.y.values[iy]
 					iytrans = np.reshape(self.y.trans[iy,:], (-1,1,1))
+					iytrans_aug =  np.asarray(iytrans) * np.asarray(epstrans)
 
 					for iz in range(self.nz):
 						izmutrans = np.reshape(self.r.mu_trans[iz,:], (1,-1,1))
-						trans = np.asarray(iytrans) * np.asarray(izmutrans) * np.asarray(epstrans)
-						transvec = np.asarray(trans).flatten()
-
-						fn = lambda v: -self.evaluateV(xval, iy, iz, transvec, v)
+						trans = np.asarray(iytrans_aug) * np.asarray(izmutrans)
+						self.curr_trans = np.asarray(trans).flatten()
+						self.curr_R = self.r.Rmat[iz,:]
 
 						x0[0] = self.bond[ix,iy,iz] + self.stock[ix,iy,iz]
 						x0[1] = self.stock[ix,iy,iz] / x0[0]
-						res = optimize.minimize(fn, np.asarray(x0), bounds=bounds, method='L-BFGS-B', options=opts)
-						bond_update[ix,iy,iz] = res.x[0] * (1 - res.x[1])
-						stock_update[ix,iy,iz] = res.x[0] * res.x[1]
-						V_update[ix,iy,iz] = -fn(res.x)
+						result = optimize.minimize(lambda v: self.evaluateV(v), np.asarray(x0), bounds=bounds, method='L-BFGS-B', options=opts)
+						bond_update[ix,iy,iz] = result.x[0] * (1 - result.x[1])
+						stock_update[ix,iy,iz] = result.x[0] * result.x[1]
+						V_update[ix,iy,iz] = -result.fun
 			
 			v0 = (np.asarray(self.bond) - np.asarray(bond_update)).flatten()
 			v1 = (np.asarray(self.stock) - np.asarray(stock_update)).flatten()
@@ -120,7 +120,7 @@ cdef class PolicyIterator:
 
 	@cython.boundscheck(False)
 	@cython.wraparound(False)
-	cdef double evaluateV(self, double xval, long iy, long iz, double[:] trans, double[:] v):
+	cdef double evaluateV(self, double[:] v):
 		cdef:
 			double[:,:,:] V_next
 			double[:] x_next, vtemp
@@ -129,19 +129,17 @@ cdef class PolicyIterator:
 
 		b = v[0] * (1 - v[1])
 		s = v[0] * v[1]
-		c = xval - v[0]
+		c = self.curr_xval - v[0]
 		u = cfunctions.utility(c) + self.p['mutil'] * cfunctions.utility(b)
 
 		x_next = np.zeros((self.r.neps,))
 		V_next = np.zeros((self.ny,self.nz,self.r.neps))
 		for iy2 in range(self.ny):
 			for iz2 in range(self.nz):
-				for ieps in range(self.r.neps):
-					x_next[ieps] = (1 + self.p['rb']) * b + np.asarray(self.r.Rmat[iz,ieps]) * s + self.y.values[iy2]
-				
+				x_next = (1 + self.p['rb']) * b + np.asarray(self.curr_R) * s + self.y.values[iy2]
 				vtemp = self.Vinterp[iy2][iz2].interp_mat1d(x_next)
 				V_next[iy2,iz2,...] = vtemp
 
-		EV = np.dot(trans, np.asarray(V_next).flatten())
+		EV = np.dot(self.curr_trans, np.asarray(V_next).flatten())
 
-		return u + self.p['beta'] * EV
+		return -(u + self.p['beta'] * EV)
