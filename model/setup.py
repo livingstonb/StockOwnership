@@ -20,6 +20,11 @@ extensions = [
 							extra_compile_args=compileArgs,
         					extra_link_args=compileArgs,),
 
+				Extension("model.ModelObjects",["model/ModelObjects.pyx"],
+							include_dirs=[np.get_include(), "model"],
+							extra_compile_args=compileArgs,
+        					extra_link_args=compileArgs,),
+
 				Extension("misc.cfunctions",["misc/cfunctions.pyx"],
 							include_dirs=[np.get_include(), "misc"],
 							extra_compile_args=compileArgs,
