@@ -140,8 +140,7 @@ cdef class PolicyIterator:
 					x_next[ieps] = (1 + self.p['rb']) * b + np.asarray(self.r.Rmat[iz,ieps]) * s + self.y.values[iy2]
 				
 				vtemp = self.Vinterp[iy2][iz2].interp_mat1d(x_next)
-				for ieps in range(self.r.neps):
-					V_next[iy2,iz2,ieps] = vtemp[ieps]
+				V_next[iy2,iz2,...] = vtemp
 
 		EV = np.dot(trans, np.asarray(V_next).flatten())
 
