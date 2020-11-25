@@ -5,6 +5,9 @@ clear
 do build/input/cross_year/cross_year.do
 
 *** Rename variables ***
+rename ER30001 famid
+rename ER30002 personid
+
 rename ER13002 intid1999
 rename ER17002 intid2001
 rename ER21002 intid2003
@@ -495,7 +498,7 @@ rename ER71538 educ2017
 drop ER* S* V*
 
 *** Reshape long ***
-gen famid = _n
+// gen famid = _n
 #delimit ;
 reshape long intid stocks wealth cash house mortrem mortratewhole
 	mortratedecimal yearobtmort homequity earnings ageh lwgt
@@ -503,7 +506,7 @@ reshape long intid stocks wealth cash house mortrem mortratewhole
 	educ month gift1y gift2y gift3y soldstock stockbought vehicles
 	wdivh wdivsp boughtvehicle1y boughtvehicle2y famchange
 	boughtvehicle3y cvacations netputinstocks ostocks wostock,
-	i(famid) j(year);
+	i(famid personid) j(year);
 #delimit cr
 
 sort famid year
