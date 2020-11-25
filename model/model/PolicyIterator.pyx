@@ -98,7 +98,8 @@ cdef class PolicyIterator:
 
 						x0[0] = self.bond[ix,iy,iz] + self.stock[ix,iy,iz]
 						x0[1] = self.stock[ix,iy,iz] / x0[0]
-						result = optimize.minimize(lambda v: self.evaluateV(v), np.asarray(x0), bounds=bounds, method='L-BFGS-B', options=opts)
+						result = optimize.minimize(lambda v: -self.evaluateV(v), np.asarray(x0),
+							bounds=bounds, method='L-BFGS-B', options=opts)
 						bond_update[ix,iy,iz] = result.x[0] * (1 - result.x[1])
 						stock_update[ix,iy,iz] = result.x[0] * result.x[1]
 						V_update[ix,iy,iz] = -result.fun
@@ -142,4 +143,4 @@ cdef class PolicyIterator:
 
 		EV = np.dot(self.curr_trans, np.asarray(V_next).flatten())
 
-		return -(u + self.p['beta'] * EV)
+		return u + self.p['beta'] * EV

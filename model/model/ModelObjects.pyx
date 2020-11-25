@@ -16,6 +16,8 @@ cdef class Returns:
 			self.mu_dist = np.array([1.0])
 			self.nbeliefs = 1
 
+		self.mu_cdf = np.cumsum(self.mu_dist)
+
 		if n_eps == 1:
 			self.eps_dist = np.array([1.0])
 			self.eps_values = np.array([0.0])
@@ -47,3 +49,6 @@ cdef class Income:
 			y = np.exp(rouwenhorst.values)
 			self.values = mu * y / np.dot(y, self.dist)
 			self.ny = self.values.shape[0]
+
+		self.cdf = np.cumsum(self.dist)
+		self.minval = np.amin(self.values)
