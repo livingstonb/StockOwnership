@@ -8,18 +8,20 @@ from misc cimport cfunctions
 from misc.Interpolant cimport Interpolant
 cimport cython
 
+from model.ModelObjects cimport Income, Returns
+
 cdef class PolicyIterator:
 	cdef:
-		public dict p, r, y
-		public object interp
+		public Income y
+		public Returns r
+		public dict p
 		public double[:] x
 
-		public long maxiters
+		public long maxiters, nx, ny, nz
 		public list Vinterp
 
 		public double[:,:,:] con, bond, stock, V
 		public double[:,:] Rmat
-		public double[:] rshockdist, rshockgrid
 		public double tol
 
 	def __init__(self, params, returns, income, xgrid):
@@ -30,15 +32,14 @@ cdef class PolicyIterator:
 		self.tol = 1.0e-7
 		self.maxiters = int(1e5)
 
-		self.rshockdist = np.array([0.25, 0.25, 0.25, 0.25])
-		self.rshockgrid = np.array([-0.002, -0.001, 0.001, 0.002])
-
-		self.Rmat = 1 + np.asarray(self.rshockgrid).reshape((1,-1)) + self.r['grid'].reshape((-1,1))
+		self.nx = params['nx']
+		self.ny = income.ny
+		self.nz = returns.nbeliefs
 	
 	def makeGuess(self):
-		tempcon = (self.p['rb'] + 0.01) * np.asarray(self.x[:,None]) + 0.5 * np.reshape(self.y['vec'], (1,-1))
-		self.con = np.tile(tempcon[:,:,None], (1,1,self.r['nz']))
-		self.bond = (np.asarray(self.x[:,None,None])  - np.asarray(self.con)) / 2.0
+		tempcon = (self.p['rb'] + 0.01) * np.asarray(self.x)
+		self.con = np.tile(tempcon[:,None,None], (1,self.ny,self.nz))
+		self.bond = (np.asarray(self.x)[:,np.newaxis,np.newaxis]  - np.asarray(self.con)) / 2.0
 		self.stock = self.bond
 		self.V = cfunctions.utility3d(self.con) / (1 - np.asarray(self.p['beta']))
 
@@ -46,7 +47,8 @@ cdef class PolicyIterator:
 	@cython.wraparound(False)
 	def iterate(self):
 		cdef:
-			double[:,:,:] bond_update, stock_update, V_update, trans
+			double[:,:,:] bond_update, stock_update, V_update, trans, epstrans
+			double[:,:,:] izmutrans, iytrans
 			double[:,:] A
 			double[:] v0, v1, v, transvec
 			double x0[2]
@@ -58,33 +60,38 @@ cdef class PolicyIterator:
 		norm = 1e5
 		it = 0
 
+		if self.p['mutil'] == 0:
+			bmin = 0
+		else:
+			bmin = 1.0e-8
+
 		opts = {'gtol':1.0e-7}
+		epstrans = np.reshape(self.r.eps_dist, (1,1,-1))
 
 		while (norm > self.tol) and (it < self.maxiters):
 			self.Vinterp = []
-			for iy in range(self.y['ny']):
+			for iy in range(self.y.ny):
 				self.Vinterp.append([])
-				for iz in range(self.r['nz']):
+				for iz in range(self.nz):
 					self.Vinterp[iy].append(Interpolant(self.x, self.V[:,iy,iz]))
 
 			bond_update = np.zeros(np.shape(self.bond))
 			stock_update = np.zeros(np.shape(self.stock))
 			V_update = np.zeros(np.shape(self.V))
-			for ix in range(self.p['nx']):
+			for ix in range(self.nx):
 				xval = self.x[ix]
-				# constraint = optimize.LinearConstraint(A, lb, ub, keep_feasible=True)
-				lb = [1.0e-8, 0.0]
-				ub = [xval - 1.0e-8, 1.0 - 1.0e-8]
+
+				lb = [bmin, 0.0]
+				ub = [xval - 1.0e-8, 1.0 - bmin]
 				bounds = optimize.Bounds(lb, ub, keep_feasible=[True, True])
 
-				for iy in range(self.y['ny']):
-					yval = self.y['vec'][iy]
-					iytrans = np.reshape(self.y['trans'][iy,:], (-1,1,1))
+				for iy in range(self.y.ny):
+					yval = self.y.values[iy]
+					iytrans = np.reshape(self.y.trans[iy,:], (-1,1,1))
 
-					for iz in range(self.r['nz']):
-						izmutrans = np.reshape(self.r['mutrans'][iz,:], (1,-1,1))
-						epstrans = np.reshape(self.rshockdist, (1,1,-1))
-						trans = iytrans * izmutrans * epstrans
+					for iz in range(self.nz):
+						izmutrans = np.reshape(self.r.mu_trans[iz,:], (1,-1,1))
+						trans = np.asarray(iytrans) * np.asarray(izmutrans) * np.asarray(epstrans)
 						transvec = np.asarray(trans).flatten()
 
 						fn = lambda v: -self.evaluateV(xval, iy, iz, transvec, v)
@@ -125,15 +132,15 @@ cdef class PolicyIterator:
 		c = xval - v[0]
 		u = cfunctions.utility(c) + self.p['mutil'] * cfunctions.utility(b)
 
-		x_next = np.zeros((self.rshockdist.shape[0],))
-		V_next = np.zeros((self.y['ny'],self.r['nz'],self.rshockdist.shape[0]))
-		for iy2 in range(self.y['ny']):
-			for iz2 in range(self.r['nz']):
-				for ieps in range(self.rshockdist.shape[0]):
-					x_next[ieps] = (1 + self.p['rb']) * b + np.asarray(self.Rmat[iz,ieps]) * s + self.y['vec'][iy2]
+		x_next = np.zeros((self.r.neps,))
+		V_next = np.zeros((self.ny,self.nz,self.r.neps))
+		for iy2 in range(self.ny):
+			for iz2 in range(self.nz):
+				for ieps in range(self.r.neps):
+					x_next[ieps] = (1 + self.p['rb']) * b + np.asarray(self.r.Rmat[iz,ieps]) * s + self.y.values[iy2]
 				
 				vtemp = self.Vinterp[iy2][iz2].interp_mat1d(x_next)
-				for ieps in range(self.rshockdist.shape[0]):
+				for ieps in range(self.r.neps):
 					V_next[iy2,iz2,ieps] = vtemp[ieps]
 
 		EV = np.dot(trans, np.asarray(V_next).flatten())
