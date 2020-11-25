@@ -19,14 +19,14 @@ def get_params():
 	params['xmax'] = 25
 	params['beta'] = 0.5
 	params['rb'] = 0.005
-	params['mutil'] = 0.1
+	params['mutil'] = 0.01
 	return params
 
 def main():
 	params = get_params()
 
 	r_mu = 0.01
-	width = 0
+	width = 0.005
 	n_eps = 3
 	sd_eps = 0.001
 	returns = Returns(r_mu, width, n_eps, sd_eps)
@@ -40,24 +40,31 @@ def main():
 	xgrid = dict()
 	xgrid['vec'] = create_grid(income.values[0], params['xmax'], params['xcurv'], params['nx'])
 	xgrid['bc'] = xgrid['vec'][...,np.newaxis,np.newaxis]
-		
+
 	policyIterator = PolicyIterator(params, returns, income, xgrid['vec'])
 	policyIterator.makeGuess()
 	policyIterator.iterate()
-
-	print(np.asarray(returns.eps_values))
 	
 	plotAllocation(policyIterator)
 
 def plotAllocation(policyIterator):
-	fig, axes = plt.subplots(nrows=3, ncols=3)
+	fig, axes = plt.subplots(nrows=1, ncols=2)
 	assets = np.asarray(policyIterator.bond) + np.asarray(policyIterator.stock)
 	chi = np.asarray(policyIterator.stock) / assets
 	chi = np.nan_to_num(chi)
-	for iy in range(2):
-		for iz in range(3):
-			axes[iy,iz].plot(policyIterator.x, np.asarray(chi[:,iy,iz]))
-	
+
+	iy = 0
+	for iz in range(2):
+		axes[iz].plot(policyIterator.x, np.asarray(chi[:,iy,iz]))
+		axes[iz].set_ylim(0, 1)
+
+	axes[0].set_title("Pessimistic")
+	axes[0].set(xlabel='wealth', ylabel='equity share of portfolio')
+	axes[1].set_title("Optimistic")
+	axes[1].set(xlabel='wealth', ylabel='equity share of portfolio')
+
+	fig.tight_layout()
+	plt.savefig('output/portfolio_allocation.png')
 	plt.show()
 	
 

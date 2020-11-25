@@ -7,7 +7,7 @@ cdef class Returns:
 	def __init__(self, mu, width, n_eps, sd_eps):
 		if width > 0:
 			self.mu_beliefs = np.array([0-width, 0+width])
-			self.mu_trans = np.array([[0.5, 0.5], [0.5, 0.5]])
+			self.mu_trans = np.array([[0.7, 0.3], [0.3, 0.7]])
 			self.mu_dist = np.array([0.5, 0.5])
 			self.nbeliefs = 2
 		else:
