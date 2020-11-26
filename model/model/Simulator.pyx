@@ -4,10 +4,10 @@ cimport numpy as np
 cdef class Simulator:
 	cdef:
 		public double[:] x
-		public long[:] iy
+		public long[:] iy, iz
 
 	def __init__(self):
-
+ 		
 
 	def initialize(self):
 		self.x = self.income.minval * np.ones((self.n,))
@@ -22,5 +22,4 @@ cdef class Simulator:
 			zrand[:,np.newaxis] <= np.asarray(self.returns.mu_cdf)[np.newaxis,:],
 			axis=1)
 
-	def makeDraw(self):
-		self.yrand = np.random.random(size=(self.n,))
+	

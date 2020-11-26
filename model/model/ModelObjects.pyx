@@ -52,3 +52,23 @@ cdef class Income:
 
 		self.cdf = np.cumsum(self.dist)
 		self.minval = np.amin(self.values)
+
+cdef class Parameters:
+	def __init__(self, params):
+		self.nx = 75
+		self.xcurv = 0.2
+		self.xmax = 25
+		self.beta = 0.8
+		self.rb = 0.005
+		self.mutil = 0.01
+		self.riskaver = 1.0
+		self.r_s = 0.01
+
+		for key, value in params.items():
+			self.set(name, value)
+
+	def set(self, name, value):
+		if hasattr(self, name):
+			setattr(self, name, value)
+		else:
+			raise Exception(f'"{name}" is not a valid parameter')

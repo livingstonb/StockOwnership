@@ -8,13 +8,13 @@ from misc cimport cfunctions
 from misc.Interpolant cimport Interpolant
 cimport cython
 
-from model.ModelObjects cimport Income, Returns
+from model.ModelObjects cimport Income, Returns, Parameters
 
 cdef class PolicyIterator:
 	cdef:
 		public Income y
 		public Returns r
-		public dict p
+		public Parameters p
 		public double[:] x
 
 		public long maxiters, nx, ny, nz
@@ -35,16 +35,16 @@ cdef class PolicyIterator:
 		self.tol = 1.0e-7
 		self.maxiters = int(1e5)
 
-		self.nx = params['nx']
+		self.nx = params.nx
 		self.ny = income.ny
 		self.nz = returns.nbeliefs
 	
 	def makeGuess(self):
-		tempcon = (self.p['rb'] + 0.01) * np.asarray(self.x)
+		tempcon = (self.p.rb + 0.01) * np.asarray(self.x)
 		self.con = np.tile(tempcon[:,None,None], (1,self.ny,self.nz))
 		self.bond = (np.asarray(self.x)[:,np.newaxis,np.newaxis]  - np.asarray(self.con)) / 2.0
 		self.stock = self.bond
-		self.V = cfunctions.utility3d(self.con) / (1 - np.asarray(self.p['beta']))
+		self.V = cfunctions.utility3d(self.con, self.p.riskaver) / (1 - np.asarray(self.p.beta))
 
 	@cython.boundscheck(False)
 	@cython.wraparound(False)
@@ -62,7 +62,7 @@ cdef class PolicyIterator:
 		norm = 1e5
 		it = 0
 
-		if self.p['mutil'] == 0:
+		if self.p.mutil == 0:
 			bmin = 0
 		else:
 			bmin = 1.0e-8
@@ -131,16 +131,18 @@ cdef class PolicyIterator:
 		b = v[0] * (1 - v[1])
 		s = v[0] * v[1]
 		c = self.curr_xval - v[0]
-		u = cfunctions.utility(c) + self.p['mutil'] * cfunctions.utility(b)
+		u = cfunctions.utility(c, self.p.riskaver
+			) + self.p.mutil * cfunctions.utility(b, self.p.riskaver)
 
 		x_next = np.zeros((self.r.neps,))
 		V_next = np.zeros((self.ny,self.nz,self.r.neps))
 		for iy2 in range(self.ny):
 			for iz2 in range(self.nz):
-				x_next = (1 + self.p['rb']) * b + np.asarray(self.curr_R) * s + self.y.values[iy2]
+				x_next = (1 + self.p.rb) * b + np.asarray(
+					self.curr_R) * s + self.y.values[iy2]
 				vtemp = self.Vinterp[iy2][iz2].interp_mat1d(x_next)
 				V_next[iy2,iz2,...] = vtemp
 
 		EV = np.dot(self.curr_trans, np.asarray(V_next).flatten())
 
-		return u + self.p['beta'] * EV
+		return u + self.p.beta * EV

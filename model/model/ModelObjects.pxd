@@ -11,3 +11,9 @@ cdef class Income:
 		public double[:] dist, values, cdf
 		public double minval
 		public long ny
+
+cdef class Parameters:
+	cdef:
+		public double xcurv, xmax, beta, rb, mutil
+		public double riskaver, r_s
+		public long nx
