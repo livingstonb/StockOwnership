@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 from model.PolicyIterator import PolicyIterator
 from model.ModelObjects import Income, Returns, Parameters
 from model.Simulator import Simulator
+from model.Statistics import Statistics
 
 def create_grid(gmin, gmax, gcurv, n):
 	grid = np.linspace(0, 1, num=n)
@@ -16,9 +17,9 @@ def create_grid(gmin, gmax, gcurv, n):
 def main():
 	pdict = dict()
 	pdict['r_s'] = 0.025
-	pdict['beta'] = 0.8
-	pdict['mutil'] = 0.02
-	pdict['nx'] = 25
+	pdict['beta'] = 0.95
+	pdict['mutil'] = 0.05
+	pdict['nx'] = 50
 	params = Parameters(pdict)
 
 	width = 0.03
@@ -43,6 +44,9 @@ def main():
 	sim = Simulator(policyIterator.bond, policyIterator.stock, params,
 		income, returns, xgrid['vec'])
 	sim.simulate()
+
+	stats = Statistics(sim)
+	stats.print()
 	
 	plotAllocation(policyIterator)
 

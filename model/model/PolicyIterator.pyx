@@ -10,6 +10,8 @@ cimport cython
 
 from model.ModelObjects cimport Income, Returns, Parameters
 
+from libc.math cimport exp, log, sqrt, pow
+
 cdef class PolicyIterator:
 	cdef:
 		public Income y
@@ -55,7 +57,8 @@ cdef class PolicyIterator:
 			double[:,:] A
 			double[:] v0, v1, v, transvec, lb, ub, Rvec
 			double x0[2]
-			double norm, xval, yval
+			double xf[2]
+			double norm, xval, yval, sav
 			long ix, iy, iz, it
 			object bounds, opts, result
 
@@ -68,7 +71,7 @@ cdef class PolicyIterator:
 			bmin = 1.0e-8
 		lb = np.array([bmin, 0.0])
 
-		opts = {'gtol':1.0e-7}
+		opts = {'gtol':1.0e-9, 'ftol':1.0e-9, 'eps':5.0e-8}
 		epstrans = np.reshape(self.r.eps_dist, (1,1,-1))
 
 		while (norm > self.tol) and (it < self.maxiters):
@@ -93,9 +96,21 @@ cdef class PolicyIterator:
 						self.curr_R = self.r.Rmat[iz,:]
 
 						x0[0] = self.bond[ix,iy,iz] + self.stock[ix,iy,iz]
-						x0[1] = self.stock[ix,iy,iz] / x0[0]
+						x0[1] = self.stock[ix,iy,iz] / (self.bond[ix,iy,iz] + self.stock[ix,iy,iz])
 						result = optimize.minimize(lambda v: -self.evaluateV(v), np.asarray(x0),
 							bounds=bounds, method='L-BFGS-B', options=opts)
+
+						# x0[0] = (self.bond[ix,iy,iz] + self.stock[ix,iy,iz]) / self.curr_xval
+						# x0[0] = log(x0[0] / (1 - x0[0]))
+						# x0[1] = self.stock[ix,iy,iz] / (self.bond[ix,iy,iz] + self.stock[ix,iy,iz])
+						# x0[1] = sqrt(x0[1] / (1-x0[1]))
+						# result = optimize.minimize(lambda v: -self.evaluateV(v), np.asarray(x0),
+						# 	method='Powell', options=opts)
+						# xf[0] = exp(result.x[0]) / (1 + exp(result.x[0]))
+						# xf[1] = pow(result.x[1], 2.0) / (1 + pow(result.x[1], 2.0))
+						# sav = xf[0] * self.curr_xval
+						# bond_update[ix,iy,iz] = sav * (1 - xf[1])
+						# stock_update[ix,iy,iz] = sav * xf[1]
 						bond_update[ix,iy,iz] = result.x[0] * (1 - result.x[1])
 						stock_update[ix,iy,iz] = result.x[0] * result.x[1]
 						V_update[ix,iy,iz] = -result.fun
@@ -123,12 +138,12 @@ cdef class PolicyIterator:
 		cdef:
 			double[:,:,:] V_next
 			double[:] x_next, vtemp
-			double b, s, c, u, EV
+			double b, s, c, u, EV, sav
 			long iy2, iz2, ieps
 
 		b = v[0] * (1 - v[1])
 		s = v[0] * v[1]
-		c = self.curr_xval - v[0]
+		c = self.curr_xval - b - s
 		u = cfunctions.utility(c, self.p.riskaver
 			) + self.p.mutil * cfunctions.utility(b, self.p.riskaver)
 

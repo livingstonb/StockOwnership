@@ -8,23 +8,31 @@ from libc.math cimport fmax
 cdef class Simulator:
 	cdef:
 		public Interpolant binterp, sinterp
-		public double[:] x, xgrid, b, s, c
-		public long[:] iy, iz
-		public long T, n
-		public Parameters p
-		public Income income
-		public Returns returns
+		double[:] x, xgrid, b, s, c
+		long[:] iy, iz
+		public long T, n, tkeep
+		Parameters p
+		Income income
+		Returns returns
+		public object bonds, stocks, con, cash, earnings, beliefs
 
 	def __init__(self, bond, stock, params, income, returns, xgrid):
 		self.p = params
 		self.T = params.Tsim
 		self.n = params.nsim
+		self.tkeep = 8
 		self.income = income
 		self.returns = returns
 		self.xgrid = xgrid
 
 		self.binterp = Interpolant(self.xgrid, bond)
 		self.sinterp = Interpolant(self.xgrid, stock)
+		self.bonds = np.zeros((self.n, self.tkeep))
+		self.stocks = np.zeros((self.n, self.tkeep))
+		self.con = np.zeros((self.n, self.tkeep))
+		self.cash = np.zeros((self.n, self.tkeep))
+		self.earnings = np.zeros((self.n, self.tkeep))
+		self.beliefs = np.zeros((self.n, self.tkeep), dtype=np.int32)
 
 	def initialize(self):
 		self.x = self.xgrid[0] * np.ones((self.n,))
@@ -45,14 +53,25 @@ cdef class Simulator:
 			axis=1)
 
 	def simulate(self):
+		cdef:
+			long it, kt = 0
+
 		self.initialize()
-		for it in range(self.Tsim):
+		for it in range(self.T):
 			self.compute_decisions()
 
-			if (it < self.Tsim - 1):
-				self.update_income()
-				self.update_cash()
-				self.update_beliefs()
+			if it >= self.T - self.tkeep:
+				self.bonds[:,kt] = np.asarray(self.b)
+				self.stocks[:,kt] = np.asarray(self.s)
+				self.cash[:,kt] = np.asarray(self.x)
+				self.con[:,kt] = np.asarray(self.c)
+				self.earnings[:,kt] = np.asarray(self.income.values)[self.iy]
+				self.beliefs[:,kt] = np.asarray(self.iz)
+				kt += 1
+
+			self.update_income()
+			self.update_cash()
+			self.update_beliefs()
 
 	def compute_decisions(self):
 		cdef:
