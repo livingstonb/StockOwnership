@@ -54,7 +54,7 @@ cdef class Income:
 		self.minval = np.amin(self.values)
 
 cdef class Parameters:
-	def __init__(self, params):
+	def __init__(self, params=None):
 		self.nx = 75
 		self.xcurv = 0.2
 		self.xmax = 25
@@ -64,8 +64,9 @@ cdef class Parameters:
 		self.riskaver = 1.0
 		self.r_s = 0.01
 
-		for key, value in params.items():
-			self.set(name, value)
+		if params is not None:
+			for key, value in params.items():
+				self.set(key, value)
 
 	def set(self, name, value):
 		if hasattr(self, name):
