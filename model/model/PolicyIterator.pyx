@@ -42,11 +42,37 @@ cdef class PolicyIterator:
 		self.nz = returns.nbeliefs
 	
 	def makeGuess(self):
-		tempcon = (self.p.rb + 0.01) * np.asarray(self.x)
+		tempcon = 0.5 * np.asarray(self.x)
 		self.con = np.tile(tempcon[:,None,None], (1,self.ny,self.nz))
-		self.bond = (np.asarray(self.x)[:,np.newaxis,np.newaxis]  - np.asarray(self.con)) / 2.0
-		self.stock = self.bond
-		self.V = cfunctions.utility3d(self.con, self.p.riskaver) / (1 - np.asarray(self.p.beta))
+
+		self.bond = np.zeros(np.shape(self.con))
+		self.stock = np.zeros(np.shape(self.con))
+
+		for ix in range(self.nx):
+			for iy in range(self.ny):
+				for iz in range(self.nz):
+					if iz == 1:
+						self.bond[ix,iy,iz] = (self.x[ix]  - self.con[ix,iy,iz]) / 2.0
+						self.stock[ix,iy,iz] = self.bond[ix,iy,iz]
+					else:
+						self.bond[ix,iy,iz] = self.x[ix]  - self.con[ix,iy,iz]
+						self.stock[ix,iy,iz] = 0
+
+		util = np.asarray(cfunctions.utility3d(self.con, self.p.riskaver))
+		if self.p.mutil > 0:
+			util += + self.p.mutil * np.asarray(
+				cfunctions.utility3d(self.bond, self.p.riskaver))
+
+		if self.nz + self.ny == 2:
+			self.V = util / (1 - self.p.beta)
+		else:
+			A = np.kron(self.r.mu_trans, self.y.trans)
+			A = np.kron(A, np.eye(self.nx))
+			util = util.reshape((-1,1))
+			B = np.eye(self.nx * self.nz * self.ny) - self.p.beta * A
+			Vvec = np.linalg.solve(B, util)
+			self.V = Vvec.reshape((self.nx, self.ny, self.nz))
+
 
 	@cython.boundscheck(False)
 	@cython.wraparound(False)
@@ -71,7 +97,7 @@ cdef class PolicyIterator:
 			bmin = 1.0e-8
 		lb = np.array([bmin, 0.0])
 
-		opts = {'gtol':1.0e-9, 'ftol':1.0e-9, 'eps':5.0e-8}
+		opts = {'gtol':1.0e-10, 'ftol':1.0e-10, 'eps':1e-8}
 		epstrans = np.reshape(self.r.eps_dist, (1,1,-1))
 
 		while (norm > self.tol) and (it < self.maxiters):
@@ -96,20 +122,26 @@ cdef class PolicyIterator:
 						self.curr_R = self.r.Rmat[iz,:]
 
 						x0[0] = self.bond[ix,iy,iz] + self.stock[ix,iy,iz]
-						x0[1] = self.stock[ix,iy,iz] / (self.bond[ix,iy,iz] + self.stock[ix,iy,iz])
+						if x0[0] == 0:
+							x0[1] = 0
+						else:
+							x0[1] = self.stock[ix,iy,iz] / (self.bond[ix,iy,iz] + self.stock[ix,iy,iz])
 						result = optimize.minimize(lambda v: -self.evaluateV(v), np.asarray(x0),
 							bounds=bounds, method='L-BFGS-B', options=opts)
 						
 						bond_update[ix,iy,iz] = result.x[0] * (1 - result.x[1])
 						stock_update[ix,iy,iz] = result.x[0] * result.x[1]
 						V_update[ix,iy,iz] = -result.fun
+
+						if stock_update[ix,iy,iz] < 1.0e-7:
+							stock_update[ix,iy,iz] = 0
 			
 			v0 = (np.asarray(self.bond) - np.asarray(bond_update)).flatten()
 			v1 = (np.asarray(self.stock) - np.asarray(stock_update)).flatten()
 			v = np.concatenate((v0, v1))
 			norm = np.linalg.norm(v, ord=np.inf)
 			
-			if (it == 0) or ((it+1) % 5 == 0):
+			if (it == 0) or ((it+1) % 10 == 0):
 				print(f'Iteration {it+1}, Norm = {norm}')
 
 			self.bond = bond_update
@@ -127,25 +159,27 @@ cdef class PolicyIterator:
 	cdef double evaluateV(self, double[:] v):
 		cdef:
 			double[:,:,:] V_next
-			double[:] x_next, vtemp
+			double[:] x_next, vtemp, assets
 			double b, s, c, u, EV, sav
 			long iy2, iz2, ieps
 
-		b = v[0] * (1 - v[1])
+		b = v[0] * (1.0 - v[1])
 		s = v[0] * v[1]
 		c = self.curr_xval - b - s
-		u = cfunctions.utility(c, self.p.riskaver
-			) + self.p.mutil * cfunctions.utility(b, self.p.riskaver)
+		u = cfunctions.utility(c, self.p.riskaver)
+
+		if self.p.mutil > 0:
+			u += self.p.mutil * cfunctions.utility(b, self.p.riskaver)
+
+		assets = (1.0 + self.p.rb) * b + np.asarray(self.curr_R) * s
 
 		x_next = np.zeros((self.r.neps,))
 		V_next = np.zeros((self.ny,self.nz,self.r.neps))
 		for iy2 in range(self.ny):
 			for iz2 in range(self.nz):
-				x_next = (1 + self.p.rb) * b + np.asarray(
-					self.curr_R) * s + self.y.values[iy2]
+				x_next = np.asarray(assets) + self.y.values[iy2]
 				vtemp = self.Vinterp.interp_mat1d(x_next, iy2, iz2)
 				V_next[iy2,iz2,...] = vtemp
 
 		EV = np.dot(self.curr_trans, np.asarray(V_next).flatten())
-
 		return u + self.p.beta * EV

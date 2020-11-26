@@ -9,7 +9,7 @@ keep if inrange(year, 1999, 2001)
 egen suid = group(famid personid)
 bysort famid intid: egen newid = max(suid)
 
-collapse (sum) stocks (sum) soldstock (sum) lwgt, by(newid year)
+collapse (sum) stocks (sum) soldstock (sum) lwgt (sum) wealth, by(newid year)
 
 gen has_stocks = (stocks > 0) & !missing(stocks)
 gen period = (year - 1997) / 2

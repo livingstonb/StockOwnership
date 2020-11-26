@@ -4,6 +4,7 @@ cdef class Returns:
 		public double[:,:] mu_trans, Rmat, mu_cumtrans
 		public double[:] mu_beliefs, eps_dist, eps_values, mu_dist, mu_cdf
 		public double[:] eps_cumdist, R_actual
+		public double mu_s
 		public long nbeliefs, neps
 
 cdef class Income:
@@ -16,5 +17,5 @@ cdef class Income:
 cdef class Parameters:
 	cdef:
 		public double xcurv, xmax, beta, rb, mutil
-		public double riskaver, r_s
+		public double riskaver
 		public long nx, Tsim, nsim

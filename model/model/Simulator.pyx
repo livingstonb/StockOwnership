@@ -98,15 +98,15 @@ cdef class Simulator:
 			double[:] Rvals
 			long i, iieps, iy
 
-		epsrand = np.random.random(size=(self.n,))
-		ieps = np.argmax(
-			epsrand[:,np.newaxis] <= np.asarray(self.returns.eps_cumdist)[np.newaxis,:],
-			axis=1)
+		# epsrand = np.random.random(size=(self.n,))
+		# ieps = np.argmax(
+		# 	epsrand[:,np.newaxis] <= np.asarray(self.returns.eps_cumdist)[np.newaxis,:],
+		# 	axis=1)
 
 		for i in range(self.n):
-			iieps = ieps[i]
+			# iieps = ieps[i]
 			iy = self.iy[i]
-			self.x[i] = (1 + self.p.rb) * self.b[i] + self.returns.R_actual[iieps] * self.s[i] + self.income.values[iy]
+			self.x[i] = (1 + self.p.rb) * self.b[i] + (1 + self.returns.mu_s) * self.s[i] + self.income.values[iy]
 
 	def update_beliefs(self):
 		zrand = np.random.random(size=(self.n,))

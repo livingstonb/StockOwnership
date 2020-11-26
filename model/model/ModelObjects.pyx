@@ -4,14 +4,30 @@ cimport numpy as np
 from misc.RandomVariables import DiscreteNormal, Rouwenhorst
 
 cdef class Returns:
-	def __init__(self, r_s, width, n_eps, sd_eps):
+	def __init__(self, mu_s, width, n_eps, sd_eps, pswitch=None):
+		self.mu_s = mu_s
+
 		if width > 0:
-			self.mu_beliefs = np.array([0-width, 0+width])
-			self.mu_trans = np.array([[0.7, 0.3], [0.3, 0.7]])
-			self.mu_dist = np.array([0.5, 0.5])
+			self.mu_beliefs = np.array([mu_s - width, mu_s + width])
+
+			if pswitch is None:
+				self.mu_trans = np.array([[0.7, 0.3], [0.3, 0.7]])
+				self.mu_dist = np.array([0.5, 0.5])
+			else:
+				self.mu_trans = np.array([
+					[1-pswitch[0], pswitch[0]],
+					[pswitch[1], 1-pswitch[1]]
+					])
+				# Ergodic distribution
+				dist = np.ones((1, 2)) / 2.0
+
+				for i in range(1,100):
+					dist = np.matmul(dist, self.mu_trans)
+				self.mu_dist = dist.flatten()
+
 			self.nbeliefs = 2
 		else:
-			self.mu_beliefs = np.array([0.0])
+			self.mu_beliefs = np.array([mu_s])
 			self.mu_trans = np.array([[1.0]])
 			self.mu_dist = np.array([1.0])
 			self.nbeliefs = 1
@@ -32,12 +48,9 @@ cdef class Returns:
 
 		logR = (np.asarray(self.mu_beliefs)[:,np.newaxis]
 			+ np.asarray(self.eps_values)[np.newaxis,:])
-		R = np.exp(logR)
-		ER = np.matmul(np.matmul(self.mu_dist, R), self.eps_dist)
-		self.Rmat = R * (1 + r_s) / ER
+		self.Rmat = np.exp(logR)
 
-		mu_actual = np.log(1 + r_s) - sd_eps ** 2.0 / 2.0
-		self.R_actual = np.exp(mu_actual + np.asarray(self.eps_values))
+		self.R_actual = np.exp(mu_s + np.asarray(self.eps_values))
 
 cdef class Income:
 	def __init__(self, mu, sigma, rho, n):
@@ -68,7 +81,6 @@ cdef class Parameters:
 		self.rb = 0.005
 		self.mutil = 0.01
 		self.riskaver = 1.0
-		self.r_s = 0.01
 		self.Tsim = 1000
 		self.nsim = int(1e5)
 

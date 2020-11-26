@@ -48,6 +48,16 @@ class Statistics:
 			"gross stockholder inflow/outflow, 2-year",
 			leftStocks.mean())
 
+		cond_eshare = np.asarray(self.sim.stocks)[stockholder,0] / self.wealth[stockholder]
+		self.cond_eshare = StatValue(
+			"mean equity share among stockholders",
+			cond_eshare.mean())
+
+		self.cond_mean_a = StatValue(
+			"mean b + s if stockholder",
+			self.wealth[stockholder].mean()
+			)
+
 	def print(self):
 		stats = [
 			self.mean_x,
@@ -55,9 +65,10 @@ class Statistics:
 			self.mean_a,
 			self.share_stockholder,
 			self.gross_stockholder_flow_1yr,
-			self.gross_stockholder_flow_2yr
+			self.gross_stockholder_flow_2yr,
+			self.cond_eshare,
+			self.cond_mean_a
 		]
-
 
 		for stat in stats:
 			if isinstance(stat, list):
