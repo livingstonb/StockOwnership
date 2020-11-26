@@ -18,7 +18,7 @@ cdef class PolicyIterator:
 		public double[:] x
 
 		public long maxiters, nx, ny, nz
-		public list Vinterp
+		public Interpolant Vinterp
 
 		public double[:,:,:] con, bond, stock, V
 		public double[:,:] Rmat
@@ -72,11 +72,7 @@ cdef class PolicyIterator:
 		epstrans = np.reshape(self.r.eps_dist, (1,1,-1))
 
 		while (norm > self.tol) and (it < self.maxiters):
-			self.Vinterp = []
-			for iy in range(self.y.ny):
-				self.Vinterp.append([])
-				for iz in range(self.nz):
-					self.Vinterp[iy].append(Interpolant(self.x, self.V[:,iy,iz]))
+			self.Vinterp = Interpolant(self.x, self.V)
 
 			bond_update = np.zeros(np.shape(self.bond))
 			stock_update = np.zeros(np.shape(self.stock))
@@ -140,7 +136,7 @@ cdef class PolicyIterator:
 			for iz2 in range(self.nz):
 				x_next = (1 + self.p.rb) * b + np.asarray(
 					self.curr_R) * s + self.y.values[iy2]
-				vtemp = self.Vinterp[iy2][iz2].interp_mat1d(x_next)
+				vtemp = self.Vinterp.interp_mat1d(x_next, iy2, iz2)
 				V_next[iy2,iz2,...] = vtemp
 
 		EV = np.dot(self.curr_trans, np.asarray(V_next).flatten())

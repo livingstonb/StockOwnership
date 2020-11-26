@@ -1,13 +1,14 @@
 
 cdef class Returns:
 	cdef:
-		public double[:,:] mu_trans, Rmat
+		public double[:,:] mu_trans, Rmat, mu_cumtrans
 		public double[:] mu_beliefs, eps_dist, eps_values, mu_dist, mu_cdf
+		public double[:] eps_cumdist, R_actual
 		public long nbeliefs, neps
 
 cdef class Income:
 	cdef:
-		public double[:,:] trans
+		public double[:,:] trans, cumtrans
 		public double[:] dist, values, cdf
 		public double minval
 		public long ny

@@ -13,11 +13,16 @@ def create_grid(gmin, gmax, gcurv, n):
 	return grid
 
 def main():
-	params = Parameters()
+	pdict = dict()
+	pdict['r_s'] = 0.025
+	pdict['beta'] = 0.8
+	pdict['mutil'] = 0.02
+	pdict['nx'] = 50
+	params = Parameters(pdict)
 
-	width = 0.005
-	n_eps = 3
-	sd_eps = 0.001
+	width = 0.03
+	n_eps = 5
+	sd_eps = 0.01
 	returns = Returns(params.r_s, width, n_eps, sd_eps)
 
 	mu = 0.25
@@ -37,20 +42,20 @@ def main():
 	plotAllocation(policyIterator)
 
 def plotAllocation(policyIterator):
-	fig, axes = plt.subplots(nrows=1, ncols=2)
+	fig, axes = plt.subplots(nrows=3, ncols=2)
 	assets = np.asarray(policyIterator.bond) + np.asarray(policyIterator.stock)
 	chi = np.asarray(policyIterator.stock) / assets
 	chi = np.nan_to_num(chi)
 
-	iy = 0
-	for iz in range(2):
-		axes[iz].plot(policyIterator.x, np.asarray(chi[:,iy,iz]))
-		axes[iz].set_ylim(0, 1)
+	for iy in range(3):
+		for iz in range(2):
+			axes[iy,iz].plot(policyIterator.x, np.asarray(chi[:,iy,iz]))
+			axes[iy,iz].set_ylim(0, 1)
 
-	axes[0].set_title("Pessimistic")
-	axes[0].set(xlabel='wealth', ylabel='equity share of portfolio')
-	axes[1].set_title("Optimistic")
-	axes[1].set(xlabel='wealth', ylabel='equity share of portfolio')
+		axes[iy,0].set_title("Pessimistic")
+		axes[iy,0].set(xlabel='wealth', ylabel='equity share of portfolio')
+		axes[iy,1].set_title("Optimistic")
+		axes[iy,1].set(xlabel='wealth', ylabel='equity share of portfolio')
 
 	fig.tight_layout()
 	plt.savefig('output/portfolio_allocation.png')

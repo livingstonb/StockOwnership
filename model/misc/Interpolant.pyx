@@ -13,7 +13,7 @@ cdef class Interpolant:
 
 	@cython.boundscheck(False)
 	@cython.wraparound(False)
-	cdef double interp(self, double x):
+	cdef double interp(self, double x, int j, int k):
 		cdef:
 			long ix
 			double z
@@ -22,11 +22,11 @@ cdef class Interpolant:
 
 		z = (self.grid[ix] - x) / (self.grid[ix] - self.grid[ix-1])
 		z = fmin(fmax(z, 0), 1)
-		return z * self.grid[ix-1] + (1 - z) * self.grid[ix]
+		return z * self.values[ix-1,j,k] + (1 - z) * self.values[ix,j,k]
 
 	@cython.boundscheck(False)
 	@cython.wraparound(False)
-	def interp_mat1d(self, double[:] x):
+	def interp_mat1d(self, double[:] x, int j, int k):
 		cdef:
 			double[:] fitted
 			long n, i
@@ -35,7 +35,7 @@ cdef class Interpolant:
 		fitted = np.zeros(np.shape(x))
 
 		for i in range(n):
-			fitted[i] = self.interp(x[i])
+			fitted[i] = self.interp(x[i], j, k)
 
 		return fitted
 
