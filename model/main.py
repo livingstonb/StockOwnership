@@ -5,6 +5,7 @@ from matplotlib import pyplot as plt
 
 from model.PolicyIterator import PolicyIterator
 from model.ModelObjects import Income, Returns, Parameters
+from model.Simulator import Simulator
 
 def create_grid(gmin, gmax, gcurv, n):
 	grid = np.linspace(0, 1, num=n)
@@ -17,7 +18,7 @@ def main():
 	pdict['r_s'] = 0.025
 	pdict['beta'] = 0.8
 	pdict['mutil'] = 0.02
-	pdict['nx'] = 50
+	pdict['nx'] = 25
 	params = Parameters(pdict)
 
 	width = 0.03
@@ -38,6 +39,10 @@ def main():
 	policyIterator = PolicyIterator(params, returns, income, xgrid['vec'])
 	policyIterator.makeGuess()
 	policyIterator.iterate()
+
+	sim = Simulator(policyIterator.bond, policyIterator.stock, params,
+		income, returns, xgrid['vec'])
+	sim.simulate()
 	
 	plotAllocation(policyIterator)
 

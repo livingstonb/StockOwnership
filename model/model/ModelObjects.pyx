@@ -69,6 +69,8 @@ cdef class Parameters:
 		self.mutil = 0.01
 		self.riskaver = 1.0
 		self.r_s = 0.01
+		self.Tsim = 1000
+		self.nsim = int(1e5)
 
 		if params is not None:
 			for key, value in params.items():

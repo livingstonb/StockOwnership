@@ -1,32 +1,38 @@
 import numpy as np
 cimport numpy as np
 
-from model.ModelObjects cimport Parameters, Income
+from model.ModelObjects cimport Parameters, Income, Returns
 from misc.Interpolant cimport Interpolant
 from libc.math cimport fmax
 
 cdef class Simulator:
 	cdef:
-		public Interpolant binter, sinterp
+		public Interpolant binterp, sinterp
 		public double[:] x, xgrid, b, s, c
 		public long[:] iy, iz
-		public long T
-		public list binterp, sinterp
+		public long T, n
 		public Parameters p
 		public Income income
+		public Returns returns
 
 	def __init__(self, bond, stock, params, income, returns, xgrid):
- 		self.p = params
- 		self.T = params.Tsim
- 		self.income = income
- 		self.returns = returns
- 		self.xgrid = xgrid
+		self.p = params
+		self.T = params.Tsim
+		self.n = params.nsim
+		self.income = income
+		self.returns = returns
+		self.xgrid = xgrid
 
- 		self.binterp = Interpolant(self.xgrid, bond)
- 		self.sinterp = Interpolant(self.xgrid, stock)
+		self.binterp = Interpolant(self.xgrid, bond)
+		self.sinterp = Interpolant(self.xgrid, stock)
 
 	def initialize(self):
-		self.x = self.xgrid[0]
+		self.x = self.xgrid[0] * np.ones((self.n,))
+		self.b = np.zeros((self.n,))
+		self.s = np.zeros((self.n,))
+		self.c = np.zeros((self.n,))
+
+		np.random.seed(2009)
 
 		yrand = np.random.random(size=(self.n,))
 		self.iy = np.argmax(

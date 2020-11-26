@@ -17,4 +17,4 @@ cdef class Parameters:
 	cdef:
 		public double xcurv, xmax, beta, rb, mutil
 		public double riskaver, r_s
-		public long nx
+		public long nx, Tsim, nsim
