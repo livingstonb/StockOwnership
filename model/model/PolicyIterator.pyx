@@ -105,7 +105,9 @@ cdef class PolicyIterator:
 			v = np.concatenate((v0, v1))
 			norm = np.linalg.norm(v, ord=np.inf)
 			
-			print(f'Norm = {norm}')
+			if (it == 0) or ((it+1) % 5 == 0):
+				print(f'Iteration {it+1}, Norm = {norm}')
+
 			self.bond = bond_update
 			self.stock = stock_update
 			self.V = V_update

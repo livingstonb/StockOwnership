@@ -39,41 +39,41 @@ cdef class Interpolant:
 
 		return fitted
 
-	@cython.boundscheck(False)
-	@cython.wraparound(False)
-	def interp_mat2d(self, double[:,:] x):
-		cdef:
-			double[:,:] fitted
-			long n, m, i, j
+	# @cython.boundscheck(False)
+	# @cython.wraparound(False)
+	# def interp_mat2d(self, double[:,:] x, int j, int k):
+	# 	cdef:
+	# 		double[:,:] fitted
+	# 		long n, m, i, j
 
-		n = x.shape[0]
-		m = x.shape[1]
-		fitted = np.zeros(np.shape(x))
+	# 	n = x.shape[0]
+	# 	m = x.shape[1]
+	# 	fitted = np.zeros(np.shape(x))
 
-		for i in range(n):
-			for j in range(m):
-				fitted[i,j] = self.interp(x[i,j])
+	# 	for i in range(n):
+	# 		for j in range(m):
+	# 			fitted[i,j] = self.interp(x[i,j])
 
-		return fitted
+	# 	return fitted
 
-	@cython.boundscheck(False)
-	@cython.wraparound(False)
-	def interp_mat3d(self, double[:,:,:] x):
-		cdef:
-			double[:,:,:] fitted
-			long n, m, l, i, j, k
+	# @cython.boundscheck(False)
+	# @cython.wraparound(False)
+	# def interp_mat3d(self, double[:,:,:] x):
+	# 	cdef:
+	# 		double[:,:,:] fitted
+	# 		long n, m, l, i, j, k
 
-		n = x.shape[0]
-		m = x.shape[1]
-		l = x.shape[2]
-		fitted = np.zeros((n,m,l))
+	# 	n = x.shape[0]
+	# 	m = x.shape[1]
+	# 	l = x.shape[2]
+	# 	fitted = np.zeros((n,m,l))
 
-		for i in range(n):
-			for j in range(m):
-				for k in range(l):
-					fitted[i,j,k] = self.interp(x[i,j,k])
+	# 	for i in range(n):
+	# 		for j in range(m):
+	# 			for k in range(l):
+	# 				fitted[i,j,k] = self.interp(x[i,j,k])
 
-		return fitted
+	# 	return fitted
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
