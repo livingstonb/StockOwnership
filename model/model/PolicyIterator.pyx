@@ -99,18 +99,7 @@ cdef class PolicyIterator:
 						x0[1] = self.stock[ix,iy,iz] / (self.bond[ix,iy,iz] + self.stock[ix,iy,iz])
 						result = optimize.minimize(lambda v: -self.evaluateV(v), np.asarray(x0),
 							bounds=bounds, method='L-BFGS-B', options=opts)
-
-						# x0[0] = (self.bond[ix,iy,iz] + self.stock[ix,iy,iz]) / self.curr_xval
-						# x0[0] = log(x0[0] / (1 - x0[0]))
-						# x0[1] = self.stock[ix,iy,iz] / (self.bond[ix,iy,iz] + self.stock[ix,iy,iz])
-						# x0[1] = sqrt(x0[1] / (1-x0[1]))
-						# result = optimize.minimize(lambda v: -self.evaluateV(v), np.asarray(x0),
-						# 	method='Powell', options=opts)
-						# xf[0] = exp(result.x[0]) / (1 + exp(result.x[0]))
-						# xf[1] = pow(result.x[1], 2.0) / (1 + pow(result.x[1], 2.0))
-						# sav = xf[0] * self.curr_xval
-						# bond_update[ix,iy,iz] = sav * (1 - xf[1])
-						# stock_update[ix,iy,iz] = sav * xf[1]
+						
 						bond_update[ix,iy,iz] = result.x[0] * (1 - result.x[1])
 						stock_update[ix,iy,iz] = result.x[0] * result.x[1]
 						V_update[ix,iy,iz] = -result.fun
@@ -130,6 +119,7 @@ cdef class PolicyIterator:
 			it += 1
 		
 		print("Converged")
+		self.con = np.asarray(self.x)[:,np.newaxis,np.newaxis] - self.bond - self.stock
 
 
 	@cython.boundscheck(False)
