@@ -18,7 +18,7 @@ def calibrate():
 	x0 = np.zeros((5,))
 	x0[0] = 0.95 # beta
 	x0[1] = 1 # riskaver
-	x0[2] = 0.1 # belief dispersion
+	x0[2] = 0.05 # belief dispersion
 	x0[3] = 0.4 # p(pessimistic -> optimistic)
 	x0[4] = 0.2 # p(optimistic -> pessimistic)
 
@@ -34,18 +34,18 @@ def obj_fn(x):
 	print(f'P(optimistic -> pessimistic) = {x[4]}')
 
 	pdict = dict()
-	pdict['rb'] = 0.0
+	pdict['rb'] = 0.005
 	pdict['beta'] = x[0]
-	pdict['mutil'] = 0.05
+	pdict['mutil'] = 0.2
 	pdict['riskaver'] = x[1]
-	pdict['nx'] = 50
+	pdict['nx'] = 75
 	pdict['xmax'] = 50
 	pdict['nsim'] = int(1e6)
 	params = Parameters(pdict)
 
 	mu_s = 0.0171
 	width = x[2]
-	n_eps = 5
+	n_eps = 7
 	sd_eps = 0.0625
 	pswitch = [x[3], x[4]]
 	returns = Returns(mu_s, width, n_eps, sd_eps, pswitch)
@@ -63,6 +63,8 @@ def obj_fn(x):
 	policyIterator = PolicyIterator(params, returns, income, xgrid['vec'])
 	policyIterator.makeGuess()
 	policyIterator.iterate()
+
+	plotAllocation(policyIterator)
 
 	sim = Simulator(policyIterator.bond, policyIterator.stock, params,
 		income, returns, xgrid['vec'])

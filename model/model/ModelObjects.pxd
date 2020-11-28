@@ -1,7 +1,7 @@
 
 cdef class Returns:
 	cdef:
-		public double[:,:] mu_trans, Rmat, mu_cumtrans
+		public double[:,:] mu_trans, Rmat, rmat, mu_cumtrans
 		public double[:] mu_beliefs, eps_dist, eps_values, mu_dist, mu_cdf
 		public double[:] eps_cumdist, R_actual
 		public double mu_s

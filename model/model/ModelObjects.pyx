@@ -49,6 +49,7 @@ cdef class Returns:
 		logR = (np.asarray(self.mu_beliefs)[:,np.newaxis]
 			+ np.asarray(self.eps_values)[np.newaxis,:])
 		self.Rmat = np.exp(logR)
+		self.rmat = np.asarray(self.Rmat) - 1.0
 
 		self.R_actual = np.exp(mu_s + np.asarray(self.eps_values))
 

@@ -5,6 +5,31 @@ from libc.math cimport fmax, fmin
 
 cimport cython
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef double grid_interp(double[:] grid1, double[:] grid2,
+	double[:,:,:,:] values, double x, double y, long j, long k):
+	cdef:
+		long ix, iy
+		double wx, wy
+
+	ix = fastSearchSingleInput(grid1, x)
+	iy = fastSearchSingleInput(grid2, y)
+
+	wx = (grid1[ix] - x) / (grid1[ix] - grid1[ix-1])
+	wx = fmin(fmax(wx, 0), 1)
+
+	wy = (grid2[iy] - y) / (grid2[iy] - grid2[iy-1])
+	wy = fmin(fmax(wy, 0), 1)
+
+	return (
+		wx * wy * values[ix-1,iy-1,j,k]
+			+ (1 - wx) * wy * values[ix,iy-1,j,k]
+			+ wx * (1 - wy) * values[ix-1,iy,j,k]
+			+ (1 - wx) * (1 - wy) * values[ix,iy,j,k]
+		)
+
+
 cdef class Interpolant:
 	def __init__(self, grid, values):
 		self.grid = grid
@@ -13,7 +38,7 @@ cdef class Interpolant:
 
 	@cython.boundscheck(False)
 	@cython.wraparound(False)
-	cdef double interp(self, double x, int j, int k):
+	cdef double interp_2ind(self, double x, int j, int k):
 		cdef:
 			long ix
 			double z
@@ -35,7 +60,7 @@ cdef class Interpolant:
 		fitted = np.zeros(np.shape(x))
 
 		for i in range(n):
-			fitted[i] = self.interp(x[i], j, k)
+			fitted[i] = self.interp_2ind(x[i], j, k)
 
 		return fitted
 
@@ -74,6 +99,35 @@ cdef class Interpolant:
 	# 				fitted[i,j,k] = self.interp(x[i,j,k])
 
 	# 	return fitted
+
+cdef class Interpolant2D:
+	def __init__(self, grid1, grid2, values):
+		self.grid1 = grid1
+		self.grid2 = grid2
+		self.values = values
+
+	@cython.boundscheck(False)
+	@cython.wraparound(False)
+	cdef double interp(self, double x, double y, int j, int k):
+		cdef:
+			long ix, iy
+			double wx, wy
+
+		ix = fastSearchSingleInput(self.grid1, x)
+		iy = fastSearchSingleInput(self.grid2, y)
+
+		wx = (self.grid1[ix] - x) / (self.grid1[ix] - self.grid1[ix-1])
+		wx = fmin(fmax(wx, 0), 1)
+
+		wy = (self.grid2[iy] - y) / (self.grid2[iy] - self.grid2[iy-1])
+		wy = fmin(fmax(wy, 0), 1)
+
+		return (
+			wx * wy * self.values[ix-1,iy-1,j,k]
+				+ (1 - wx) * wy * self.values[ix,iy-1,j,k]
+				+ wx * (1 - wy) * self.values[ix-1,iy,j,k]
+				+ (1 - wx) * (1 - wy) * self.values[ix,iy,j,k]
+			)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

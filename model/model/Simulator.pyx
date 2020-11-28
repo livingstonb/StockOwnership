@@ -82,8 +82,8 @@ cdef class Simulator:
 			iy = self.iy[i]
 			iz = self.iz[i]
 			xval = self.x[i]
-			self.b[i] =  self.binterp.interp(xval, iy, iz)
-			self.s[i] = self.sinterp.interp(xval, iy, iz)
+			self.b[i] =  self.binterp.interp_2ind(xval, iy, iz)
+			self.s[i] = self.sinterp.interp_2ind(xval, iy, iz)
 			self.c[i] = fmax(xval - self.b[i] - self.s[i], 1.0e-8)
 
 	def update_income(self):
